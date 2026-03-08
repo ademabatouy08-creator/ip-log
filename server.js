@@ -6,37 +6,44 @@ const io = require('socket.io')(http);
 app.use(express.static(__dirname));
 
 const users = {}; 
-const bannedIPs = new Set();
+const ADMIN_NAME = "TonPseudo"; // ⚠️ CHANGE CA PAR TON PSEUDO POUR VOIR LES IPs
 
 io.on('connection', (socket) => {
     const ip = (socket.handshake.headers['x-forwarded-for'] || socket.conn.remoteAddress || "0.0.0.0").split(',')[0].trim();
-    if (bannedIPs.has(ip)) socket.emit('CORE_MELTDOWN');
 
     socket.on('init_user', (data) => {
         users[socket.id] = { ...data, ip, sid: socket.id };
-        console.log(`[SYNAPSE] ${data.name} connecté via ${ip}`);
-        io.emit('update_users', Object.values(users));
+        
+        // On envoie la liste. Si c'est l'admin, il reçoit les IPs, sinon on les masque.
+        updateAllUsers();
     });
 
-    socket.on('chat_msg', (data) => {
-        if (data.text?.startsWith("/bomb ")) {
-            const target = data.text.split(" ")[1];
-            bannedIPs.add(target);
-            Object.values(users).forEach(u => { if(u.ip.includes(target)) io.to(u.sid).emit('CORE_MELTDOWN'); });
-        } else {
-            io.emit('chat_msg', data);
-        }
-    });
+    function updateAllUsers() {
+        Object.keys(users).forEach(sid => {
+            const isTargetAdmin = users[sid].name === ADMIN_NAME;
+            const userList = Object.values(users).map(u => ({
+                name: u.name,
+                pp: u.pp,
+                sid: u.sid,
+                theme: u.theme,
+                // L'IP n'est envoyée que si le destinataire est l'Admin
+                ip: isTargetAdmin ? u.ip : "SÉCURISÉ" 
+            }));
+            io.to(sid).emit('update_users', userList);
+        });
+    }
 
-    socket.on('call_signal', (toSid) => {
-        if(users[toSid]) {
-            io.to(toSid).emit('incoming_call', { fromName: users[socket.id].name, fromPP: users[socket.id].pp, fromSid: socket.id });
-            socket.emit('calling_state', { toName: users[toSid].name, toPP: users[toSid].pp });
-        }
+    // --- SIGNALING WEBRTC ---
+    socket.on('call_user', (data) => {
+        io.to(data.to).emit('incoming_call', { signal: data.signal, from: socket.id, name: users[socket.id].name, pp: users[socket.id].pp });
     });
+    socket.on('accept_call', (data) => { io.to(data.to).emit('call_accepted', data.signal); });
+    socket.on('ice_candidate', (data) => { io.to(data.to).emit('ice_candidate', data.candidate); });
 
-    socket.on('disconnect', () => { delete users[socket.id]; io.emit('update_users', Object.values(users)); });
+    socket.on('chat_msg', (data) => io.emit('chat_msg', data));
+    
+    socket.on('disconnect', () => { delete users[socket.id]; updateAllUsers(); });
 });
 
 const PORT = process.env.PORT || 3000;
-http.listen(PORT, () => console.log("NEON_V22_READY"));
+http.listen(PORT, () => console.log("NEON_PREMIUM_V25_READY"));
