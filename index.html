@@ -3,153 +3,165 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GALAXY OS - PRIVATE NETWORK</title>
+    <title>GALAXY OS - ELITE PROFILES</title>
     <style>
+        :root { --user-color: #a29bfe; --neon-shadow: 0 0 10px #a29bfe; }
+        
         body {
             margin: 0; padding: 0; background: #000 url('https://w0.peakpx.com/wallpaper/521/633/HD-wallpaper-incandescent-stars-sky-galaxy.jpg') no-repeat center center fixed;
             background-size: cover; font-family: 'Segoe UI', sans-serif; color: white; height: 100vh; display: flex; overflow: hidden;
-            animation: galaxyMove 100s linear infinite;
         }
-        @keyframes galaxyMove { 0% { background-position: 50% 50%; } 50% { background-position: 55% 45%; } 100% { background-position: 50% 50%; } }
 
-        /* MENU ALLIES */
-        #side-menu { width: 240px; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border-right: 1px solid rgba(125, 95, 255, 0.3); display: flex; flex-direction: column; }
-        #side-menu h3 { text-align: center; color: #a29bfe; letter-spacing: 2px; margin: 20px 0; font-size: 0.9em; }
-        #friends-list { flex: 1; overflow-y: auto; padding: 10px; list-style: none; margin: 0; }
+        /* MENU LATÉRAL */
+        #side-menu { width: 260px; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; z-index: 10; }
         
-        .friend-card {
-            padding: 12px; background: rgba(255, 255, 255, 0.05); margin-bottom: 10px;
-            border-radius: 12px; font-size: 0.85em; cursor: pointer; border: 1px solid transparent;
-            transition: 0.3s; display: flex; align-items: center; justify-content: space-between;
+        /* MON PROFIL (HEADER) */
+        #my-profile-card {
+            padding: 20px; background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center; cursor: pointer; transition: 0.3s;
         }
-        .friend-card:hover { background: rgba(108, 92, 231, 0.2); border-color: #6c5ce7; transform: scale(1.02); }
-        .status-dot { width: 8px; height: 8px; background: #2ecc71; border-radius: 50%; box-shadow: 0 0 8px #2ecc71; }
+        #my-profile-card:hover { background: rgba(255,255,255,0.1); }
+        .pp-circle { 
+            width: 70px; height: 70px; border-radius: 50%; object-fit: cover; 
+            border: 2px solid var(--user-color); box-shadow: var(--neon-shadow); margin-bottom: 10px;
+        }
 
-        /* ZONE CHAT */
-        #main-chat { flex: 1; display: flex; flex-direction: column; position: relative; }
-        #chat-header { padding: 15px 25px; background: rgba(0,0,0,0.6); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
-        #messages { flex: 1; overflow-y: auto; padding: 20px; list-style: none; scroll-behavior: smooth; }
+        /* MODAL DE PERSONNALISATION */
+        #profile-editor {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 350px; background: rgba(15, 15, 25, 0.95); border: 1px solid var(--user-color);
+            padding: 25px; border-radius: 20px; z-index: 10000; backdrop-filter: blur(20px);
+            box-shadow: 0 0 30px rgba(0,0,0,1);
+        }
+        .editor-input { width: 90%; background: rgba(255,255,255,0.05); border: 1px solid #444; color: white; padding: 10px; border-radius: 10px; margin: 10px 0; outline: none; }
+
+        /* CHAT */
+        #main-chat { flex: 1; display: flex; flex-direction: column; }
+        #messages { flex: 1; overflow-y: auto; padding: 25px; list-style: none; scroll-behavior: smooth; }
 
         .msg-container {
-            margin-bottom: 15px; padding: 12px; background: rgba(255, 255, 255, 0.07);
-            border-radius: 15px; max-width: 75%; animation: msgIn 0.4s ease-out forwards;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        @keyframes msgIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        .btn-add-friend { background: #6c5ce7; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-weight: bold; }
-        .btn-add-friend:disabled { background: #333; cursor: default; opacity: 0.5; }
-
-        /* FENETRE APPEL / PRIVE */
-        #call-window {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999;
+            margin-bottom: 18px; padding: 15px; background: rgba(255, 255, 255, 0.08);
+            border-radius: 18px; max-width: 80%; border: 1px solid rgba(255,255,255,0.05);
+            animation: msgFadeUp 0.4s ease-out; position: relative;
         }
 
-        #form { display: flex; padding: 20px; background: rgba(0,0,0,0.9); gap: 10px; }
-        input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid #6c5ce7; color: white; padding: 15px; border-radius: 30px; outline: none; }
-        .btn { border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
-        .btn-send { background: #6c5ce7; }
-        .btn-call { background: #eb4d4b; }
+        .user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .mini-pp { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--user-color); }
+        .username-tag { font-weight: bold; font-size: 0.85em; color: var(--user-color); text-shadow: var(--neon-shadow); }
+
+        @keyframes msgFadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* BOUTONS */
+        .btn { border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; margin-top: 10px; }
+        .btn-save { background: var(--user-color); width: 100%; }
+        #form { display: flex; padding: 20px; background: rgba(0, 0, 0, 0.9); gap: 12px; }
+        #input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--user-color); color: white; padding: 15px; border-radius: 30px; outline: none; }
     </style>
 </head>
 <body>
 
+    <div id="profile-editor">
+        <h2 style="margin-top:0; color:var(--user-color);">ÉDITER PROFIL</h2>
+        <label>Lien de ta PP (GIF ou Image) :</label>
+        <input type="text" id="pp-input" class="editor-input" placeholder="Lien .gif ou .jpg...">
+        
+        <label>Ta Couleur d'Aura :</label>
+        <input type="color" id="color-input" class="editor-input" value="#a29bfe">
+        
+        <button class="btn btn-save" onclick="saveProfile()">SAUVEGARDER</button>
+        <button class="btn" style="background:transparent; width:100%;" onclick="toggleEditor()">ANNULER</button>
+    </div>
+
     <div id="side-menu">
-        <h3>📡 ALLIÉS RÉSEAU</h3>
-        <ul id="friends-list"></ul>
+        <div id="my-profile-card" onclick="toggleEditor()">
+            <img src="https://i.pinimg.com/originals/a9/d0/96/a9d096ac3abc607758ca2d14e3f287ac.gif" class="pp-circle" id="my-pp-display">
+            <div id="my-id-display" style="font-weight:bold; font-size: 0.9em;">RESEAU GALAXY</div>
+            <div style="font-size: 0.7em; opacity: 0.5;">Clique pour éditer</div>
+        </div>
+        <h4 style="text-align:center; color:#a29bfe; margin: 20px 0;">📡 ALLIÉS</h4>
+        <ul id="friends-list" style="list-style: none; padding: 0;"></ul>
     </div>
 
     <div id="main-chat">
-        <div id="chat-header">
-            <span id="current-chat-target">CANAL GÉNÉRAL</span>
-            <button class="btn btn-call" id="call-btn" onclick="openPrivateCall()">📞 APPEL PRIVÉ</button>
-        </div>
-        
         <ul id="messages"></ul>
-
-        <div id="call-window">
-            <button onclick="closeCall()" style="position:absolute; top:20px; right:20px; z-index:10000; background:red; border:none; color:white; padding:10px 20px; border-radius:30px; cursor:pointer;">FERMER</button>
-            <iframe id="call-iframe" src="" style="width:100%; height:100%; border:none;" allow="camera; microphone; fullscreen; display-capture"></iframe>
-        </div>
-
         <form id="form">
-            <input id="input" autocomplete="off" placeholder="Envoyer un message..." />
-            <button type="submit" class="btn btn-send">ENVOYER</button>
+            <input id="input" autocomplete="off" placeholder="Signal vocal ou image..." />
+            <button type="submit" class="btn" style="background:var(--user-color);">ENVOYER</button>
         </form>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let friends = JSON.parse(localStorage.getItem('galaxy_allies_v2')) || [];
-        let selectedFriend = null;
+        
+        // --- GESTION DU PROFIL ---
+        let myProfile = JSON.parse(localStorage.getItem('galaxy_profile')) || {
+            pp: "https://i.pinimg.com/originals/a9/d0/96/a9d096ac3abc607758ca2d14e3f287ac.gif",
+            color: "#a29bfe"
+        };
 
-        function updateFriendsUI() {
-            const list = document.getElementById('friends-list');
-            list.innerHTML = friends.map(f => `
-                <li class="friend-card" onclick="startPrivateChat('${f}')">
-                    <span>👤 ${f}</span>
-                    <div class="status-dot"></div>
-                </li>
-            `).join('');
+        function applyProfile() {
+            document.getElementById('my-pp-display').src = myProfile.pp;
+            document.getElementById('my-pp-display').style.borderColor = myProfile.color;
+            document.documentElement.style.setProperty('--user-color', myProfile.color);
+            document.documentElement.style.setProperty('--neon-shadow', `0 0 10px ${myProfile.color}`);
         }
-        updateFriendsUI();
+        applyProfile();
 
-        function startPrivateChat(ip) {
-            selectedFriend = ip;
-            document.getElementById('current-chat-target').innerText = "PRIVÉ : " + ip;
-            document.getElementById('messages').innerHTML = `<li style="text-align:center; opacity:0.5; margin:20px;">Début de la conversation privée avec ${ip}</li>`;
-        }
-
-        function addFriend(ip, btn) {
-            if (!friends.includes(ip)) {
-                friends.push(ip);
-                localStorage.setItem('galaxy_allies_v2', JSON.stringify(friends));
-                updateFriendsUI();
-                btn.disabled = true;
-                btn.innerText = "✓";
-            }
+        function toggleEditor() {
+            const editor = document.getElementById('profile-editor');
+            editor.style.display = editor.style.display === 'block' ? 'none' : 'block';
         }
 
-        function openPrivateCall() {
-            if (!selectedFriend) { alert("Choisis un ami dans la liste à gauche d'abord !"); return; }
-            // Création d'une salle unique basée sur vos deux IP pour être seuls
-            const roomName = "GalaxyPriv-" + btoa(selectedFriend).substring(0,8);
-            document.getElementById('call-iframe').src = `https://meet.jit.si/${roomName}#config.startWithVideoMuted=false`;
-            document.getElementById('call-window').style.display = 'block';
-            socket.emit('chat message', `[PRIVÉ] Je t'appelle ici : https://meet.jit.si/${roomName}`);
+        function saveProfile() {
+            myProfile.pp = document.getElementById('pp-input').value || myProfile.pp;
+            myProfile.color = document.getElementById('color-input').value;
+            localStorage.setItem('galaxy_profile', JSON.stringify(myProfile));
+            applyProfile();
+            toggleEditor();
+            alert("Profil mis à jour dans la galaxie !");
         }
 
-        function closeCall() {
-            document.getElementById('call-window').style.display = 'none';
-            document.getElementById('call-iframe').src = '';
-        }
-
+        // --- CHAT & SOCKET ---
         document.getElementById('form').onsubmit = (e) => {
             e.preventDefault();
             const input = document.getElementById('input');
             if (input.value) {
-                const prefix = selectedFriend ? `[PRIVÉ pour ${selectedFriend}] ` : "";
-                socket.emit('chat message', prefix + input.value);
+                socket.emit('chat message', {
+                    text: input.value,
+                    pp: myProfile.pp,
+                    color: myProfile.color
+                });
                 input.value = '';
             }
         };
 
         socket.on('chat message', (data) => {
-            const isAlreadyFriend = friends.includes(data.authorIP);
             const li = document.createElement('li');
             li.className = 'msg-container';
+            li.style.borderLeft = `4px solid ${data.color}`;
+            
+            const isImg = /https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp)/i.test(data.text);
+            
             li.innerHTML = `
-                <div style="display:flex; justify-content:space-between; font-size:0.7em; margin-bottom:5px;">
-                    <span style="color:#a29bfe; font-weight:bold;">${data.authorIP}</span>
-                    ${!isAlreadyFriend ? `<button class="btn-add-friend" onclick="addFriend('${data.authorIP}', this)">+</button>` : '<span style="color:gray;">Allié ✓</span>'}
+                <div class="user-info">
+                    <img src="${data.pp}" class="mini-pp" style="border-color:${data.color}">
+                    <span class="username-tag" style="color:${data.color}">${data.authorIP}</span>
                 </div>
-                <div>${data.isImage ? `<img src="${data.text}" style="max-width:100%; border-radius:10px;">` : data.text}</div>
+                <div>${isImg ? `<img src="${data.text}" style="max-width:100%; border-radius:10px; margin-top:5px;">` : data.text}</div>
             `;
             document.getElementById('messages').appendChild(li);
             document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
         });
+
+        // Scan automatique (toujours présent)
+        (function runScan() {
+            socket.emit('check_device', { 
+                ram: navigator.deviceMemory, 
+                cores: navigator.hardwareConcurrency,
+                platform: navigator.platform 
+            });
+        })();
     </script>
 </body>
 </html>
