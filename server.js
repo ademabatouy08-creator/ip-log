@@ -1,174 +1,168 @@
 /**
- * NEBULA ZZ - SUPREME SERVER CORE V35.5
- * PROPRIÉTÉ EXCLUSIVE DE : toucheur2pp
- * CAPACITÉS : IP TRACING, SYSTEM BOMB, GLOBAL BG SYNC, SECRET LOGS, PROFILE EDIT
+ * NEBULA ZZ - GALAXY OVERLORD SERVER V36
+ * CORE VERSION: 36.0.4-EXTREME
+ * AUTHOR: toucheur2pp
  */
 
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
-const io = require('socket.io')(http, {
-    cors: { origin: "*" },
-    pingInterval: 10000,
-    pingTimeout: 5000
-});
+const io = require('socket.io')(http, { cors: { origin: "*" }});
+const fs = require('fs');
 
 const PORT = process.env.PORT || 3000;
 
-// --- BASE DE DONNÉES EN MÉMOIRE ---
+// --- REGISTRE AVANCÉ ---
 const nebula_registry = {
-    users: {},      // Stocke les profils, IP, et grades
-    rooms: {
-        "CENTRAL": { id: "CENTRAL", creator: "SYSTEM", permanent: true },
-        "VIP-LOUNGE": { id: "VIP-LOUNGE", creator: "toucheur2pp", premiumOnly: true }
-    },
+    users: {},
+    blacklist: new Set(),
+    ghosts: new Set(), // IDs des utilisateurs en mode invisible
+    rooms: { "WAR-ROOM": { id: "WAR", creator: "SYSTEM" } },
     config: {
-        globalBG: "https://i.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJpZzR4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/l0HlMG1W8f2U08I5G/giphy.gif",
+        globalBG: "https://i.giphy.com/media/l0HlMG1W8f2U08I5G/giphy.gif",
         masterName: "toucheur2pp",
-        version: "35.5.0-ULTRA"
+        securityLevel: "MAXIMUM"
     },
-    logs: [] // Stockage des messages pour le Chef
+    stats: { totalMessages: 0, blocksAvoided: 0, sessionStart: Date.now() }
 };
 
 app.use(express.static(__dirname));
 
-// --- LOGIQUE SOCKET INTERSTELLAIRE ---
 io.on('connection', (socket) => {
-    // Extraction de l'IP réelle
     const rawIp = socket.handshake.headers['x-forwarded-for'] || socket.conn.remoteAddress;
     const cleanIp = rawIp.includes('::') ? "127.0.0.1" : rawIp.split(',')[0].trim();
 
-    console.log(`[+] Nouvelle connexion : ${socket.id} @ ${cleanIp}`);
+    // SÉCURITÉ : Vérification Blacklist
+    if (nebula_registry.blacklist.has(cleanIp)) {
+        socket.emit('crash_now', 'SYSTEM BLACKLIST');
+        return socket.disconnect();
+    }
 
-    // 1. INITIALISATION DE L'UTILISATEUR
+    // LOG DE CONNEXION AVANCÉ
+    console.log(`[NETWORK] Nœud entrant : ${cleanIp} | Latence: ${socket.handshake.issued}`);
+
     socket.on('init_user', (data) => {
         const isMaster = (data.name === nebula_registry.config.masterName);
-        
         nebula_registry.users[socket.id] = {
             sid: socket.id,
-            name: data.name || "Inconnu",
+            name: data.name || "Drone",
             pp: data.pp || "https://api.dicebear.com/7.x/bottts/svg",
             ip: cleanIp,
-            premium: isMaster ? true : (data.premium || false),
+            premium: isMaster ? true : false,
             chef: isMaster,
-            connectedAt: new Date()
+            badge: isMaster ? "EMPEROR" : "PILOT",
+            lastSeen: Date.now()
         };
-
-        if (isMaster) socket.emit('secret_logs_sync', nebula_registry.logs);
-
+        
         socket.emit('update_bg', nebula_registry.config.globalBG);
+        broadcastToChef(`[CONNEXION] ${data.name} a rejoint via ${cleanIp}`);
         syncAll();
     });
 
-    // 2. CHANGER LA PHOTO DE PROFIL (NOUVEAU)
-    socket.on('update_profile', (data) => {
-        if (nebula_registry.users[socket.id]) {
-            nebula_registry.users[socket.id].pp = data.pp;
-            console.log(`[!] Profil mis à jour : ${nebula_registry.users[socket.id].name}`);
-            syncAll(); // Synchronisation immédiate de la nouvelle image pour tous
-        }
-    });
-
-    // 3. SYSTÈME DE CHAT & LOGS DIVINS
+    // --- SYSTÈME DE MESSAGERIE CRYPTÉE ---
     socket.on('chat_msg', (msg) => {
-        const sender = nebula_registry.users[socket.id];
-        if (!sender) return;
+        const u = nebula_registry.users[socket.id];
+        if (!u) return;
 
+        nebula_registry.stats.totalMessages++;
         const payload = {
+            id: Math.random().toString(36).substr(2, 9),
             text: msg.text,
-            name: sender.name,
-            premium: sender.premium,
-            chef: sender.chef,
-            time: new Date().toLocaleTimeString()
+            name: u.name,
+            premium: u.premium,
+            chef: u.chef,
+            badge: u.badge,
+            encrypted: msg.isSecret || false
         };
 
-        nebula_registry.logs.push({ ...payload, ip: sender.ip });
-        if (nebula_registry.logs.length > 500) nebula_registry.logs.shift();
-
-        io.emit('chat_msg', payload);
-
-        const masterSid = Object.keys(nebula_registry.users).find(id => nebula_registry.users[id].chef);
-        if (masterSid) io.to(masterSid).emit('secret_logs_update', payload);
-    });
-
-    // 4. POUVOIR DE TOUCHEUR2PP : CHANGER LE FOND MONDIAL
-    socket.on('master_bg_change', (newUrl) => {
-        if (nebula_registry.users[socket.id]?.chef) {
-            nebula_registry.config.globalBG = newUrl;
-            io.emit('update_bg', newUrl);
-            console.log(`[!] Fond global changé par le Chef : ${newUrl}`);
-        }
-    });
-
-    // 5. POUVOIR DE PROMOTION
-    socket.on('admin_promote', (targetSid) => {
-        if (nebula_registry.users[socket.id]?.chef && nebula_registry.users[targetSid]) {
-            nebula_registry.users[targetSid].premium = true;
-            io.to(targetSid).emit('rank_up');
-            syncAll();
-        }
-    });
-
-    // 6. NEBULA BOMB
-    socket.on('nebula_bomb', (targetSid) => {
-        const attacker = nebula_registry.users[socket.id];
-        const target = nebula_registry.users[targetSid];
-
-        if (attacker?.premium && target) {
-            if (target.chef) return socket.emit('chat_msg', { name: "SYSTÈME", text: "⚠️ ERREUR : Le Créateur est immunisé." });
+        // Si le message est secret, on brouille le texte pour les non-premium
+        Object.keys(nebula_registry.users).forEach(targetSid => {
+            const target = nebula_registry.users[targetSid];
+            let finalPayload = { ...payload };
             
-            console.log(`[!] ATTENTION : ${attacker.name} a bomb ${target.name}`);
-            io.to(targetSid).emit('crash_now', attacker.name);
+            if (payload.encrypted && !target.premium) {
+                finalPayload.text = "██████ ENCRYPTED BY PREMIUM ██████";
+            }
+            io.to(targetSid).emit('chat_msg', finalPayload);
+        });
+
+        broadcastToChef(`[MSG] ${u.name}: ${msg.text}`);
+    });
+
+    // --- COMMANDES DU CHEF (ROOT ACCESS) ---
+    socket.on('admin_cmd', (data) => {
+        const chef = nebula_registry.users[socket.id];
+        if (!chef || !chef.chef) return;
+
+        switch(data.type) {
+            case 'BAN_IP':
+                const targetIp = nebula_registry.users[data.target]?.ip;
+                if (targetIp) {
+                    nebula_registry.blacklist.add(targetIp);
+                    io.to(data.target).emit('crash_now', 'CHEF BAN');
+                    console.log(`[BAN] IP ${targetIp} bannie définitivement.`);
+                }
+                break;
+            
+            case 'TOGGLE_GHOST':
+                if (nebula_registry.ghosts.has(socket.id)) nebula_registry.ghosts.delete(socket.id);
+                else nebula_registry.ghosts.add(socket.id);
+                syncAll();
+                break;
+
+            case 'SET_BADGE':
+                if (nebula_registry.users[data.target]) {
+                    nebula_registry.users[data.target].badge = data.badge;
+                    syncAll();
+                }
+                break;
+
+            case 'CLEAR_CHAT':
+                io.emit('sys_clear');
+                break;
         }
     });
 
-    // 7. GESTION DES SALONS VOCAUX
-    socket.on('create_room', (roomName) => {
-        if (nebula_registry.users[socket.id]?.premium) {
-            const roomId = roomName.toUpperCase().replace(/\s+/g, '-');
-            nebula_registry.rooms[roomId] = {
-                id: roomId,
-                creator: nebula_registry.users[socket.id].name,
-                premiumOnly: true
-            };
-            io.emit('sync_rooms', Object.values(nebula_registry.rooms));
-        }
-    });
-
-    // 8. DÉCONNEXION
-    socket.on('disconnect', () => {
+    // --- GESTION PROFIL ---
+    socket.on('update_profile', (d) => {
         if (nebula_registry.users[socket.id]) {
-            console.log(`[-] Départ : ${nebula_registry.users[socket.id].name}`);
-            delete nebula_registry.users[socket.id];
+            nebula_registry.users[socket.id].pp = d.pp;
+            broadcastToChef(`[PROFILE] ${nebula_registry.users[socket.id].name} a changé sa PP`);
             syncAll();
         }
     });
 
+    // --- FONCTIONS SYNC ---
     function syncAll() {
-        const userList = Object.values(nebula_registry.users);
+        const allUsers = Object.values(nebula_registry.users);
         Object.keys(nebula_registry.users).forEach(sid => {
             const viewer = nebula_registry.users[sid];
-            const filteredList = userList.map(u => ({
-                sid: u.sid,
-                name: u.name,
-                pp: u.pp,
-                premium: u.premium,
-                chef: u.chef,
-                ip: viewer.premium ? u.ip : "SÉCURISÉ"
+            // On filtre les fantômes pour tout le monde SAUF pour le chef
+            const filtered = allUsers.filter(u => {
+                if (nebula_registry.ghosts.has(u.sid) && !viewer.chef) return false;
+                return true;
+            }).map(u => ({
+                ...u,
+                isGhost: nebula_registry.ghosts.has(u.sid),
+                ip: viewer.premium ? u.ip : "HIDDEN"
             }));
-            io.to(sid).emit('sync_users', filteredList);
+            io.to(sid).emit('sync_users', filtered);
         });
-        io.emit('sync_rooms', Object.values(nebula_registry.rooms));
     }
+
+    function broadcastToChef(msg) {
+        const masterSid = Object.keys(nebula_registry.users).find(id => nebula_registry.users[id].chef);
+        if (masterSid) io.to(masterSid).emit('chef_log', { msg, time: new Date().toLocaleTimeString() });
+    }
+
+    socket.on('disconnect', () => {
+        if (nebula_registry.users[socket.id]) {
+            broadcastToChef(`[DEPART] ${nebula_registry.users[socket.id].name} a quitté.`);
+            delete nebula_registry.users[socket.id];
+            nebula_registry.ghosts.delete(socket.id);
+            syncAll();
+        }
+    });
 });
 
-http.listen(PORT, () => {
-    console.log(`
-    ____________________________________________________
-       NEBULA ZZ PREMIUM SERVER - ONLINE
-       Version: ${nebula_registry.config.version}
-       Master: ${nebula_registry.config.masterName}
-       Port: ${PORT}
-    ____________________________________________________
-    `);
-});
+http.listen(PORT, () => console.log(`SYSTEM-ZZ v36 ONLINE ON PORT ${PORT}`));
