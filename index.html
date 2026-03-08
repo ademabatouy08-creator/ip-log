@@ -3,165 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GALAXY OS - ELITE PROFILES</title>
+    <title>GALAXY NET - SECURE</title>
     <style>
-        :root { --user-color: #a29bfe; --neon-shadow: 0 0 10px #a29bfe; }
-        
+        :root { --user-color: #a29bfe; --neon: 0 0 15px #a29bfe; }
         body {
             margin: 0; padding: 0; background: #000 url('https://w0.peakpx.com/wallpaper/521/633/HD-wallpaper-incandescent-stars-sky-galaxy.jpg') no-repeat center center fixed;
             background-size: cover; font-family: 'Segoe UI', sans-serif; color: white; height: 100vh; display: flex; overflow: hidden;
         }
 
-        /* MENU LATÉRAL */
-        #side-menu { width: 260px; background: rgba(0,0,0,0.85); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; z-index: 10; }
+        /* ÉCRAN DE CONNEXION (LOGIN) */
+        #login-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(20px);
+        }
+        .login-box { background: rgba(255,255,255,0.05); padding: 40px; border-radius: 30px; border: 1px solid var(--user-color); text-align: center; box-shadow: var(--neon); }
         
-        /* MON PROFIL (HEADER) */
-        #my-profile-card {
-            padding: 20px; background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.1);
-            text-align: center; cursor: pointer; transition: 0.3s;
-        }
-        #my-profile-card:hover { background: rgba(255,255,255,0.1); }
-        .pp-circle { 
-            width: 70px; height: 70px; border-radius: 50%; object-fit: cover; 
-            border: 2px solid var(--user-color); box-shadow: var(--neon-shadow); margin-bottom: 10px;
-        }
-
-        /* MODAL DE PERSONNALISATION */
-        #profile-editor {
-            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 350px; background: rgba(15, 15, 25, 0.95); border: 1px solid var(--user-color);
-            padding: 25px; border-radius: 20px; z-index: 10000; backdrop-filter: blur(20px);
-            box-shadow: 0 0 30px rgba(0,0,0,1);
-        }
-        .editor-input { width: 90%; background: rgba(255,255,255,0.05); border: 1px solid #444; color: white; padding: 10px; border-radius: 10px; margin: 10px 0; outline: none; }
-
-        /* CHAT */
+        /* INTERFACE PRINCIPALE */
+        #side-menu { width: 280px; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; }
         #main-chat { flex: 1; display: flex; flex-direction: column; }
+        
         #messages { flex: 1; overflow-y: auto; padding: 25px; list-style: none; scroll-behavior: smooth; }
-
-        .msg-container {
-            margin-bottom: 18px; padding: 15px; background: rgba(255, 255, 255, 0.08);
-            border-radius: 18px; max-width: 80%; border: 1px solid rgba(255,255,255,0.05);
-            animation: msgFadeUp 0.4s ease-out; position: relative;
+        
+        /* BULLES MESSAGES */
+        .msg-card {
+            margin-bottom: 20px; padding: 15px; background: rgba(255, 255, 255, 0.08);
+            border-radius: 20px; max-width: 80%; border-left: 5px solid var(--user-color);
+            animation: slideUp 0.4s ease-out;
         }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-        .mini-pp { width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--user-color); }
-        .username-tag { font-weight: bold; font-size: 0.85em; color: var(--user-color); text-shadow: var(--neon-shadow); }
+        .user-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .mini-pp { width: 35px; height: 35px; border-radius: 50%; border: 2px solid var(--user-color); object-fit: cover; }
+        .name-tag { font-weight: bold; color: var(--user-color); text-shadow: var(--neon); }
 
-        @keyframes msgFadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        /* FORMULAIRE & BOUTONS */
+        #form { display: flex; padding: 20px; background: rgba(0,0,0,0.9); gap: 10px; }
+        input { background: rgba(255,255,255,0.07); border: 1px solid var(--user-color); color: white; padding: 15px; border-radius: 30px; outline: none; flex: 1; }
+        .btn { border: none; padding: 10px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        .btn-call { background: #eb4d4b; }
+        .btn-send { background: var(--user-color); box-shadow: var(--neon); }
 
-        /* BOUTONS */
-        .btn { border: none; padding: 10px 20px; border-radius: 30px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; margin-top: 10px; }
-        .btn-save { background: var(--user-color); width: 100%; }
-        #form { display: flex; padding: 20px; background: rgba(0, 0, 0, 0.9); gap: 12px; }
-        #input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid var(--user-color); color: white; padding: 15px; border-radius: 30px; outline: none; }
+        /* APPEL IFRAME */
+        #call-window { display: none; position: fixed; inset: 0; background: #000; z-index: 9999; }
     </style>
 </head>
 <body>
 
-    <div id="profile-editor">
-        <h2 style="margin-top:0; color:var(--user-color);">ÉDITER PROFIL</h2>
-        <label>Lien de ta PP (GIF ou Image) :</label>
-        <input type="text" id="pp-input" class="editor-input" placeholder="Lien .gif ou .jpg...">
-        
-        <label>Ta Couleur d'Aura :</label>
-        <input type="color" id="color-input" class="editor-input" value="#a29bfe">
-        
-        <button class="btn btn-save" onclick="saveProfile()">SAUVEGARDER</button>
-        <button class="btn" style="background:transparent; width:100%;" onclick="toggleEditor()">ANNULER</button>
+    <div id="login-overlay">
+        <div class="login-box">
+            <h2 style="color:var(--user-color); text-shadow: var(--neon);">ACCÈS GALAXY</h2>
+            <input type="text" id="login-name" placeholder="Ton Pseudo..." style="width:250px; margin-bottom:15px;"><br>
+            <input type="text" id="login-pp" placeholder="Lien de ta PP (GIF/Image)..." style="width:250px; margin-bottom:15px;"><br>
+            <button class="btn btn-send" onclick="enterGalaxy()" style="width:250px;">REJOINDRE LE RÉSEAU</button>
+        </div>
     </div>
 
     <div id="side-menu">
-        <div id="my-profile-card" onclick="toggleEditor()">
-            <img src="https://i.pinimg.com/originals/a9/d0/96/a9d096ac3abc607758ca2d14e3f287ac.gif" class="pp-circle" id="my-pp-display">
-            <div id="my-id-display" style="font-weight:bold; font-size: 0.9em;">RESEAU GALAXY</div>
-            <div style="font-size: 0.7em; opacity: 0.5;">Clique pour éditer</div>
+        <div style="padding:30px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1);">
+            <img src="" id="my-avatar" style="width:80px; height:80px; border-radius:50%; border:3px solid var(--user-color); box-shadow: var(--neon); object-fit: cover;">
+            <h3 id="my-name-display" style="margin:10px 0 5px 0;"></h3>
+            <span style="font-size:0.7em; color:gray;">STATUT : EN LIGNE</span>
         </div>
-        <h4 style="text-align:center; color:#a29bfe; margin: 20px 0;">📡 ALLIÉS</h4>
-        <ul id="friends-list" style="list-style: none; padding: 0;"></ul>
+        <h4 style="text-align:center; color:var(--user-color); margin-top:20px;">📡 ALLIÉS</h4>
+        <ul id="friends-list" style="list-style:none; padding:10px;"></ul>
     </div>
 
     <div id="main-chat">
+        <div id="call-window">
+            <button onclick="endCall()" style="position:absolute; top:20px; right:20px; z-index:10001; background:red; color:white; border:none; padding:10px 20px; border-radius:30px; cursor:pointer;">QUITTER</button>
+            <iframe id="call-iframe" src="" style="width:100%; height:100%; border:none;" allow="camera; microphone; fullscreen"></iframe>
+        </div>
+
         <ul id="messages"></ul>
         <form id="form">
-            <input id="input" autocomplete="off" placeholder="Signal vocal ou image..." />
-            <button type="submit" class="btn" style="background:var(--user-color);">ENVOYER</button>
+            <button type="button" class="btn btn-call" onclick="startCall()">📞 APPEL</button>
+            <input id="input" autocomplete="off" placeholder="Message..." />
+            <button type="submit" class="btn btn-send">ENVOYER</button>
         </form>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        
-        // --- GESTION DU PROFIL ---
-        let myProfile = JSON.parse(localStorage.getItem('galaxy_profile')) || {
-            pp: "https://i.pinimg.com/originals/a9/d0/96/a9d096ac3abc607758ca2d14e3f287ac.gif",
-            color: "#a29bfe"
-        };
+        let userProfile = { name: "", pp: "", color: "#a29bfe" };
 
-        function applyProfile() {
-            document.getElementById('my-pp-display').src = myProfile.pp;
-            document.getElementById('my-pp-display').style.borderColor = myProfile.color;
-            document.documentElement.style.setProperty('--user-color', myProfile.color);
-            document.documentElement.style.setProperty('--neon-shadow', `0 0 10px ${myProfile.color}`);
-        }
-        applyProfile();
+        // 1. Entrer dans le chat
+        function enterGalaxy() {
+            const name = document.getElementById('login-name').value;
+            const pp = document.getElementById('login-pp').value || "https://via.placeholder.com/150";
+            
+            if(name.length < 2) return alert("Pseudo trop court !");
+            
+            userProfile.name = name;
+            userProfile.pp = pp;
+            
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('my-avatar').src = pp;
+            document.getElementById('my-name-display').innerText = name;
 
-        function toggleEditor() {
-            const editor = document.getElementById('profile-editor');
-            editor.style.display = editor.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function saveProfile() {
-            myProfile.pp = document.getElementById('pp-input').value || myProfile.pp;
-            myProfile.color = document.getElementById('color-input').value;
-            localStorage.setItem('galaxy_profile', JSON.stringify(myProfile));
-            applyProfile();
-            toggleEditor();
-            alert("Profil mis à jour dans la galaxie !");
+            // Envoi d'un signal de connexion avec les infos de l'appareil (invisible)
+            socket.emit('check_device', { 
+                name: name,
+                ram: navigator.deviceMemory, 
+                gpu: "Scanning..." 
+            });
         }
 
-        // --- CHAT & SOCKET ---
+        // 2. Système d'Appel
+        function startCall() {
+            const room = "GalaxyRoom-" + Math.random().toString(36).substring(7);
+            document.getElementById('call-iframe').src = `https://meet.jit.si/${room}`;
+            document.getElementById('call-window').style.display = 'block';
+            socket.emit('chat message', { 
+                text: `📞 APPEL LANCÉ : https://meet.jit.si/${room}`,
+                name: userProfile.name,
+                pp: userProfile.pp 
+            });
+        }
+        function endCall() {
+            document.getElementById('call-window').style.display = 'none';
+            document.getElementById('call-iframe').src = '';
+        }
+
+        // 3. Envoi Message
         document.getElementById('form').onsubmit = (e) => {
             e.preventDefault();
             const input = document.getElementById('input');
-            if (input.value) {
+            if(input.value) {
                 socket.emit('chat message', {
                     text: input.value,
-                    pp: myProfile.pp,
-                    color: myProfile.color
+                    name: userProfile.name,
+                    pp: userProfile.pp
                 });
                 input.value = '';
             }
         };
 
+        // 4. Réception Message (L'IP n'est PAS affichée ici)
         socket.on('chat message', (data) => {
             const li = document.createElement('li');
-            li.className = 'msg-container';
-            li.style.borderLeft = `4px solid ${data.color}`;
+            li.className = 'msg-card';
             
             const isImg = /https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp)/i.test(data.text);
-            
+
             li.innerHTML = `
-                <div class="user-info">
-                    <img src="${data.pp}" class="mini-pp" style="border-color:${data.color}">
-                    <span class="username-tag" style="color:${data.color}">${data.authorIP}</span>
+                <div class="user-header">
+                    <img src="${data.pp}" class="mini-pp">
+                    <span class="name-tag">${data.name}</span>
                 </div>
-                <div>${isImg ? `<img src="${data.text}" style="max-width:100%; border-radius:10px; margin-top:5px;">` : data.text}</div>
+                <div>${isImg ? `<img src="${data.text}" style="max-width:100%; border-radius:12px;">` : data.text}</div>
             `;
             document.getElementById('messages').appendChild(li);
             document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
         });
-
-        // Scan automatique (toujours présent)
-        (function runScan() {
-            socket.emit('check_device', { 
-                ram: navigator.deviceMemory, 
-                cores: navigator.hardwareConcurrency,
-                platform: navigator.platform 
-            });
-        })();
     </script>
 </body>
 </html>
