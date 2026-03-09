@@ -1,61 +1,56 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8"><title>Neon-Chat V21</title>
+    <meta charset="UTF-8"><title>Neon-Chat V22</title>
     <style>
-        body { background: #050505; color: #0f0; font-family: 'Courier New', monospace; margin: 0; overflow: hidden; }
-        #auth { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; }
-        .box { border: 1px solid #0f0; padding: 30px; background: #0a0a0a; box-shadow: 0 0 20px #0f0; }
+        body { background: #000; color: #0f0; font-family: monospace; margin: 0; }
+        #gate { position: fixed; inset: 0; background: #000; display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .box { border: 2px solid #0f0; padding: 25px; background: #050505; }
         input { display: block; width: 250px; padding: 10px; margin: 10px 0; background: #000; color: #0f0; border: 1px solid #0f0; }
-        #main { display: flex; height: 100vh; }
-        #side { width: 280px; border-right: 1px solid #0f0; padding: 10px; background: #080808; }
-        #view { flex: 1; display: flex; flex-direction: column; }
-        #msgs { flex: 1; padding: 20px; overflow-y: auto; }
-        .user-link { padding: 8px; border-bottom: 1px solid #111; cursor: pointer; }
-        .user-link:hover { background: #111; }
+        #app { display: flex; height: 100vh; }
+        #side { width: 260px; border-right: 1px solid #222; background: #080808; padding: 10px; }
+        #msgs { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        .user-card { padding: 10px; border-bottom: 1px solid #222; cursor: pointer; }
+        .alert { background: #330; color: #ff0; padding: 10px; border: 1px solid #ff0; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <div id="auth">
+    <div id="gate">
         <div class="box">
-            <h2 style="text-align:center">NEON-PHANTOM LOGIN</h2>
-            <input type="text" id="nick" placeholder="Username">
+            <h2>ACCÈS SÉCURISÉ</h2>
+            <input type="text" id="nick" placeholder="Pseudo">
             <input type="email" id="mail" placeholder="Email">
-            <button onclick="start()" style="width:100%; padding:10px; background:#0f0; border:none; cursor:pointer; font-weight:bold;">ACCÉDER</button>
+            <button onclick="boot()" style="width:100%; padding:10px; background:#0f0; border:none; cursor:pointer; font-weight:bold;">LOGIN</button>
         </div>
     </div>
-    <div id="main">
-        <div id="side"><h3>CIBLES EN LIGNE</h3><div id="u-list"></div></div>
-        <div id="view">
-            <div id="msgs"></div>
-            <div style="padding:20px;"><input type="text" id="m-in" onkeydown="if(event.key==='Enter')send()" style="width:95%" placeholder="Écrire..."></div>
-        </div>
+    <div id="app">
+        <div id="side"><h3>UTILISATEURS</h3><div id="u-list"></div></div>
+        <div id="msgs"></div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io(); let myMail = "";
-        function start() {
-            const n = document.getElementById('nick').value; myMail = document.getElementById('mail').value;
-            if(n && myMail) { document.getElementById('auth').style.display = 'none'; socket.emit('init', { n:n, e:myMail }); }
+        const socket = io(); let me = "";
+        function boot() {
+            const n = document.getElementById('nick').value; me = document.getElementById('mail').value;
+            if(n && me) { document.getElementById('gate').style.display='none'; socket.emit('init', {n, e:me}); }
         }
-        function send() {
-            const i = document.getElementById('m-in');
-            if(i.value) { socket.emit('chat', { t: i.value, type: 'msg' }); i.value = ""; }
-        }
-        socket.on('chat', d => {
-            const div = document.createElement('div');
-            div.innerHTML = `<b style="color:${d.t.type==='intel'?'#f0f':'#0f0'}">${d.n}:</b> ${d.t.t}`;
-            document.getElementById('msgs').appendChild(div);
-            document.getElementById('msgs').scrollTop = 99999;
+        socket.on('sys_msg', msg => {
+            const d = document.createElement('div'); d.className='alert'; d.innerText=msg;
+            document.getElementById('msgs').prepend(d);
         });
         socket.on('sync', users => {
-            const list = document.getElementById('u-list'); list.innerHTML = "";
+            const list = document.getElementById('u-list'); list.innerHTML="";
             users.forEach(u => {
-                const item = document.createElement('div'); item.className = 'user-link';
-                // Si tu es modo, l'IP s'affiche. Sinon, rien.
-                item.innerHTML = `<b>${u.n}</b><br><span style="color:#ff0; font-size:11px;">${u.ip || ''}</span>`;
-                list.appendChild(item);
+                const div = document.createElement('div'); div.className='user-card';
+                // L'IP s'affiche ici si le serveur l'envoie (Modo uniquement)
+                div.innerHTML = `<b>${u.n}</b><br><span style="color:#ff0">${u.ip || ''}</span>`;
+                div.onclick = () => { if(u.ip) { navigator.clipboard.writeText(u.ip); alert("IP copiée !"); } };
+                list.appendChild(div);
             });
+        });
+        socket.on('chat', d => {
+            const b = document.createElement('div'); b.innerHTML = `<b>${d.n}:</b> ${d.t.t}`;
+            document.getElementById('msgs').appendChild(b);
         });
     </script>
 </body>
